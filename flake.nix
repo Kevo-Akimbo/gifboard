@@ -8,14 +8,40 @@
   outputs =
     { nixpkgs, ... }:
     let
-      system = "X86_64-linux";
+      system = "x86_64-linux";
       pkgs = import nixpkgs { inherit system; };
+      qtEnv =
+        with pkgs.qt6;
+        env "qt-custom-${qtbase.version}" [
+          qtdeclarative
+          pkgs.kdePackages.layer-shell-qt
+        ];
     in
     {
-      devShells.${system}.default = pkgs.mkShell {
+      devShells.x86_64-linux.default = pkgs.mkShell {
         packages = [
           pkgs.libxkbcommon
+          pkgs.fontconfig
+          pkgs.freetype
+          pkgs.zlib
+          pkgs.bzip2
+          pkgs.libpng
+          pkgs.brotli
+          pkgs.expat
+          pkgs.libglvnd
+
+          pkgs.binutils
+          pkgs.clang-tools
+          pkgs.cmake
+          qtEnv
         ];
+
+        nativeBuildInputs = [
+          pkgs.pkg-config
+        ];
+
+        LD_LIBRARY_PATH = "${pkgs.libxkbcommon}/lib";
+        QMAKE = "${qtEnv}/bin/qmake";
       };
     };
 }
