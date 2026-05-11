@@ -28,6 +28,23 @@ pub mod qobject {
         #[cxx_name = "sayHi"]
         fn say_hi(&self, string: &QString, number: i32);
     }
+
+    // #[cxx_qt::qobject]
+    // #[derive(Default)]
+    // pub struct WindowHelper {}
+    //
+    // impl qobject::WindowHelper {
+    //     #[qinvokable]
+    //     pub fn position_at_cursor(self: Pin<&mut Self>, window: Pin<&mut QWindow>) {
+    //         let pos = cxx_qt_lib::QCursor::pos();
+    //
+    //         // Calculate coordinates (centering the window)
+    //         let x = pos.x() - (window.width() / 2);
+    //         let y = pos.y() - (window.height() / 2);
+    //
+    //         window.set_position(&cxx_qt_lib::QPoint::new(x, y));
+    //     }
+    // }
 }
 
 use core::pin::Pin;

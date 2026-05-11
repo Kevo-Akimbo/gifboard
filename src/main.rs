@@ -83,6 +83,8 @@ fn main() {
     //     event_queue.blocking_dispatch(&mut app).unwrap();
     // }
 
+    println!("Start");
+
     let mut app = QGuiApplication::new();
     let mut engine = QQmlApplicationEngine::new();
 

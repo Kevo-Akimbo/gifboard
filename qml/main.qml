@@ -2,15 +2,26 @@ import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Window 2.12
 
+import org.kde.layershell 1.0 as LayerShell
+
 import com.estrel.gifboard 1.0
 
 ApplicationWindow {
     id: root
-    height: 480
     title: qsTr("Hello World")
     visible: true
-    width: 640
+    visibility: Window.Windowed
     color: palette.window
+
+    height: 280
+    width: 240
+    LayerShell.Window.layer: LayerShell.Window.LayerOverlay
+    LayerShell.Window.anchors: LayerShell.Window.AnchorNone
+    // LayerShell.Window.keyboardInteractivity
+    LayerShell.Window.exclusionZone: 0
+    flags: Qt.Popup
+
+    Component.onCompleted: {}
 
     readonly property MyObject myObject: MyObject {
         number: 1

@@ -18,6 +18,7 @@
         ];
     in
     {
+      packages.${system}.default = pkgs.callPackage ./. { };
       devShells.x86_64-linux.default = pkgs.mkShell {
         packages = [
           pkgs.libxkbcommon
@@ -34,6 +35,11 @@
           pkgs.clang-tools
           pkgs.cmake
           qtEnv
+
+          pkgs.rustPackages.cargo
+          pkgs.rustPackages.clippy
+          pkgs.rustPackages.rustc
+          pkgs.rustPackages.rustfmt
         ];
 
         nativeBuildInputs = [
