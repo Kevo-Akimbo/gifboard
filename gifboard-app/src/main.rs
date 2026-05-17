@@ -7,14 +7,6 @@ use std::pin::Pin;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     gifboard_qml::register_types();
-    let config_path = xdg::BaseDirectories::new().place_config_file("gifboard.json")?;
-    if !config_path.exists() {
-        eprintln!(
-            "No config file found, creating one at {}",
-            config_path.display()
-        );
-        gifboard_core::config::create_base_config()?;
-    }
 
     // return Ok(());
 

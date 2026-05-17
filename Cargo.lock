@@ -566,7 +566,6 @@ dependencies = [
  "cxx-qt",
  "cxx-qt-build",
  "cxx-qt-lib",
- "gifboard-core",
  "gifboard-qml",
  "serde_json",
  "smithay-client-toolkit",

@@ -109,7 +109,7 @@ fn attachment_from_result(
     };
 
     let output = match config.output_filetype {
-        config::Filetype::Gif => res.file.sm.gif,
+        config::Filetype::Gif => res.file.hd.gif,
         config::Filetype::Webp => res.file.hd.webp,
         config::Filetype::Jpg => res.file.hd.jpg,
         config::Filetype::Mp4 => res.file.hd.mp4,
