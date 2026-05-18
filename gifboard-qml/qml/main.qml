@@ -170,8 +170,13 @@ ApplicationWindow {
 
                 property real scrollPosition: 0
                 onContentYChanged: {
-                    scrollPosition = contentY;
-                    if (contentHeight - scrollPosition < 2600) {
+                    for (let i = 0; i < columnCount; i++) {
+                        let columnListView = gifColumnRepeater.itemAt(i);
+                        if (columnListView) {
+                            columnListView.contentY = contentY;
+                        }
+                    }
+                    if (contentHeight - contentY < 2600) {
                         root.searchResults.queryThrottled(searchInput.text);
                     }
                 }
@@ -180,15 +185,14 @@ ApplicationWindow {
                 property var columnModels: []
 
                 function updateMaxHeight() {
-                    let maxVal = 0;
-                    // Check the real contentHeight of each spawned ListView
+                    let minVal = Infinity;
                     for (let i = 0; i < columnCount; i++) {
                         let columnListView = gifColumnRepeater.itemAt(i);
                         if (columnListView) {
-                            maxVal = Math.max(maxVal, columnListView.contentHeight);
+                            minVal = Math.min(minVal, columnListView.contentHeight);
                         }
                     }
-                    contentHeight = maxVal;
+                    contentHeight = minVal;
                 }
 
                 Component.onCompleted: {
