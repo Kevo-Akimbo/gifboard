@@ -64,7 +64,7 @@ X11EventFilter *get_x11_event_filter() { return filter; }
 bool inject_key_event(int32_t type, uint32_t keysym, uint32_t modifiers,
                       const QString &text) {
 
-  QEvent::Type qtype = type ? QEvent::Type::KeyPress : QEvent::Type::KeyRelease;
+  QEvent::Type qtype = type ? QEvent::Type::KeyRelease : QEvent::Type::KeyPress;
   Qt::KeyboardModifiers qmodifiers =
       static_cast<Qt::KeyboardModifiers>(modifiers);
 

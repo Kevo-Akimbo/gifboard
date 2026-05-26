@@ -110,7 +110,6 @@ impl Default for X11ManagerRust {
 }
 
 impl ffi::X11Manager {
-    // TODO: Allow for Keyboard modifiers to be detected on keypress, not just keyrelease
     fn key_received(self: Pin<&mut Self>, keycode: xcb::x::Keycode, qtype: u8) -> bool {
         let keycode = xkb::Keycode::new(keycode.into());
         let direction = if qtype == 0 {
