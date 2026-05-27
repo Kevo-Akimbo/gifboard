@@ -5,7 +5,6 @@
 #include <QtGui/QWindow>
 #include <X11/Xlib.h>
 #include <cstdint>
-#include <iostream>
 
 #include "src/keysym_to_QTKey.h"
 

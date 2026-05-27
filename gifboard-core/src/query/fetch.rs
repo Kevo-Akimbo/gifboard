@@ -1,11 +1,4 @@
-use std::sync::LazyLock;
-
 use cxx_qt_lib::QString;
-use tokio::{
-    sync::{Mutex, mpsc},
-    task::JoinHandle,
-    time,
-};
 
 use crate::{config, query::klippy::fetch_from_klippy};
 
@@ -27,90 +20,43 @@ pub struct Attachment {
     pub width: usize,
 }
 
-// Returns `None` if the query was not called due to debounce
-// otherwise returns a std::io::result type
-type QueryMessage = Option<std::io::Result<Vec<Attachment>>>;
-type PrevQuery = Option<(mpsc::Sender<QueryMessage>, JoinHandle<()>)>;
+impl Attachment {
+    /// output_uri, hover_uri, preview_uri, width, height
+    pub fn to_received_result_item(self) -> (QString, QString, QString, u32, u32) {
+        let output_uri = match self.output_uri {
+            AttachmentType::Url(s) => QString::from(s),
+            AttachmentType::LocalFile(s) => QString::from(s),
+            AttachmentType::RawJpg => {
+                panic!("Output type should not use blur_preview")
+            }
+        };
 
-async fn get_files(query: &str, page: usize) -> std::io::Result<Vec<Attachment>> {
+        let hover_uri = match self.hover_uri {
+            Some(AttachmentType::Url(s)) => QString::from(s),
+            Some(AttachmentType::LocalFile(s)) => QString::from(s),
+            Some(AttachmentType::RawJpg) => QString::from(self.blur_preview.clone()),
+            None => QString::default(),
+        };
+
+        let preview_uri = match self.preview_uri {
+            AttachmentType::Url(s) => QString::from(s),
+            AttachmentType::LocalFile(s) => QString::from(s),
+            AttachmentType::RawJpg => QString::from(self.blur_preview),
+        };
+
+        (
+            output_uri,
+            hover_uri,
+            preview_uri,
+            self.width as u32,
+            self.height as u32,
+        )
+    }
+}
+
+pub async fn fetch_query(query: &QString, page: usize) -> std::io::Result<Vec<Attachment>> {
     let mut attachments = vec![];
     let config = config::read_config()?;
-    attachments.append(&mut fetch_from_klippy(&config, page, query).await?);
-
+    attachments.append(&mut fetch_from_klippy(&config, page, &query.to_string()).await?);
     Ok(attachments)
-}
-
-static DEBOUNCE: LazyLock<Mutex<PrevQuery>> = LazyLock::new(|| Mutex::new(None));
-async fn fetch_query_debounced(query: QString, page: usize) -> mpsc::Receiver<QueryMessage> {
-    let (tx, rx) = mpsc::channel(1);
-    let mut task = DEBOUNCE.lock().await;
-
-    if let Some((old_tx, old)) = task.take() {
-        old.abort();
-        let _ = old_tx.send(None).await;
-    }
-
-    // Add keyboard debounce so queries only happen 500ms after all edits have stopped
-    // to prevent too much api calls
-    *task = Some((
-        tx.clone(),
-        (tokio::spawn(async move {
-            time::sleep(time::Duration::from_millis(500)).await;
-
-            match get_files(&query.to_string(), page).await {
-                Err(e) => {
-                    let _ = tx.send(Some(Err(e))).await;
-                }
-                Ok(files) => {
-                    let _ = tx.send(Some(Ok(files))).await;
-                }
-            }
-        })),
-    ));
-
-    rx
-}
-
-static THROTTLE: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
-pub async fn fetch_query_throttled(query: QString, page: usize) -> mpsc::Receiver<QueryMessage> {
-    let (tx, rx) = mpsc::channel(1);
-    if let Ok(guard) = THROTTLE.try_lock() {
-        match get_files(&query.to_string(), page).await {
-            Err(e) => {
-                let _ = tx.send(Some(Err(e))).await;
-            }
-            Ok(files) => {
-                let _ = tx.send(Some(Ok(files))).await;
-            }
-        }
-        let _ = tokio::time::sleep(tokio::time::Duration::from_secs_f64(1.0)).await;
-        drop(guard);
-    } else {
-        let _ = tx.send(None).await;
-    }
-
-    rx
-}
-
-pub async fn fetch_query(
-    query: QString,
-    page: usize,
-    debounced: bool,
-) -> std::io::Result<Option<Vec<Attachment>>> {
-    let mut rx = if debounced {
-        fetch_query_debounced(query, page).await
-    } else {
-        fetch_query_throttled(query, page).await
-    };
-
-    let result = rx
-        .recv()
-        .await
-        .expect("Query rx channel was unexpectedly closed");
-    rx.close();
-    if let Some(result) = result {
-        result.map(Some)
-    } else {
-        Ok(None) //query caught by debounce
-    }
 }

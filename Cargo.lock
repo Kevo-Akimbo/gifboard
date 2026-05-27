@@ -589,7 +589,6 @@ dependencies = [
 name = "gifboard-core"
 version = "0.1.0"
 dependencies = [
- "base64",
  "cxx",
  "cxx-qt",
  "cxx-qt-build",
@@ -597,9 +596,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
- "smithay-client-toolkit",
  "tokio",
- "wayland-client",
  "xdg",
 ]
 

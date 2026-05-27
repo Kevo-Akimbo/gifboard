@@ -1,6 +1,6 @@
-use std::io;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
+use std::io;
 
 use crate::{
     config,

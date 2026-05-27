@@ -85,28 +85,36 @@ ApplicationWindow {
             id: searchInput
             Layout.fillWidth: true
             focus: true
-            onTextEdited: {
-                if (text.length > 0) {
-                    root.searchResults.queryDebounced(text);
+
+            property string lastQuery: ""
+
+            Timer {
+                id: inputDebounce
+                interval: 500
+                repeat: false
+                onTriggered: {
+                    if (searchInput.text.length > 0 && searchInput.lastQuery != searchInput.text) {
+                        root.searchResults.query(searchInput.text, true);
+                        searchInput.lastQuery = searchInput.text;
+                        root.searchResults.clearResults();
+                    }
                 }
-                root.searchResults.clearResults();
             }
+
+            onTextEdited: inputDebounce.restart()
+
             onEditingFinished: {
-                if (text.length > 0) {
-                    root.searchResults.queryDebounced(text);
+              if (text.length > 0 && text !== lastQuery) {
+                    inputDebounce.stop();
+                    root.searchResults.query(searchInput.text, true);
+                    root.searchResults.clearResults();
                 }
-                root.searchResults.clearResults();
             }
         }
 
         Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
-
-            Rectangle {
-                color: "blue"
-                opacity: 0.5
-            }
 
             RowLayout {
                 id: gifColumns //Yeah
@@ -142,6 +150,11 @@ ApplicationWindow {
                             height: imageHeight
                             property bool hovered: false
                             property bool hasHoverImage: imageHoverUri !== ""
+
+                            Rectangle {
+                                anchors.fill: parent
+                                color: "#505F71"
+                            }
 
                             AnimatedImage {
                                 id: previewImage
@@ -221,6 +234,17 @@ ApplicationWindow {
                 contentWidth: searchInput.width
                 clip: true
 
+                Timer {
+                    id: gifPreviewsThrottler
+                    triggeredOnStart: true
+                    repeat: false
+                    interval: 1500
+                    onTriggered: {
+                        console.log("Throttled");
+                        root.searchResults.query(searchInput.text, false);
+                    }
+                }
+
                 onContentYChanged: {
                     for (let i = 0; i < columnCount; i++) {
                         let columnListView = gifColumnRepeater.itemAt(i);
@@ -228,8 +252,8 @@ ApplicationWindow {
                             columnListView.contentY = contentY;
                         }
                     }
-                    if (contentHeight - contentY < (height * 4)) {
-                        root.searchResults.queryThrottled(searchInput.text);
+                    if (contentHeight - contentY < (height * 4) && !gifPreviewsThrottler.running) {
+                        gifPreviewsThrottler.start();
                     }
                 }
 
@@ -259,7 +283,7 @@ ApplicationWindow {
             }
         }
     }
-    // property X11EventFilter x11EventFilter: X11EventFilter {}
+
     property X11Manager x11Manager: X11Manager {}
     property SearchResults searchResults: SearchResults {
         onQueryError: err => {

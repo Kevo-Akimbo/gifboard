@@ -73,7 +73,6 @@ impl Default for X11ManagerRust {
     fn default() -> Self {
         let conn = unsafe { ffi::get_x11_connection().cast::<xcb::ffi::xcb_connection_t>() };
         if conn.is_null() {
-            println!("Not on X11");
             return Self { x11: None };
         }
         let conn = unsafe { xcb::Connection::from_raw_conn_and_extensions_no_drop(conn, &[], &[]) };
