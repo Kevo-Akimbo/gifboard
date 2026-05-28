@@ -50,6 +50,8 @@
           pkgs.lld
           pkgs.ninja
           pkgs.sccache
+          pkgs.xdpyinfo
+          pkgs.dwm
         ];
 
         LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
