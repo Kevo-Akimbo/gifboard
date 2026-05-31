@@ -148,6 +148,7 @@ ApplicationWindow {
                             required property string imagePreviewUri
                             required property string imageHoverUri
                             required property string imageOutputUri
+                            required property string blurPreview
                             required property int imageHeight
                             required property int index
                             width: column.width
@@ -371,7 +372,7 @@ ApplicationWindow {
             columnHeights = temp;
         }
 
-        onReceivedResult: (output_uri, hover_uri, preview_uri, width, height) => {
+        onReceivedResult: (output_uri, hover_uri, preview_uri, blur_preview, width, height) => {
             if (gifPreviews.columnModels.length === 0) {
                 return;
             }

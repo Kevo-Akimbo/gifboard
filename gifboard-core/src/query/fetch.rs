@@ -22,7 +22,7 @@ pub struct Attachment {
 
 impl Attachment {
     /// output_uri, hover_uri, preview_uri, width, height
-    pub fn to_received_result_item(self) -> (QString, QString, QString, u32, u32) {
+    pub fn to_received_result_item(self) -> (QString, QString, QString, QString, u32, u32) {
         let output_uri = match self.output_uri {
             AttachmentType::Url(s) => QString::from(s),
             AttachmentType::LocalFile(s) => QString::from(s),
@@ -41,13 +41,14 @@ impl Attachment {
         let preview_uri = match self.preview_uri {
             AttachmentType::Url(s) => QString::from(s),
             AttachmentType::LocalFile(s) => QString::from(s),
-            AttachmentType::RawJpg => QString::from(self.blur_preview),
+            AttachmentType::RawJpg => QString::from(self.blur_preview.clone()),
         };
 
         (
             output_uri,
             hover_uri,
             preview_uri,
+            QString::from(self.blur_preview),
             self.width as u32,
             self.height as u32,
         )

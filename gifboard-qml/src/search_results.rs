@@ -26,6 +26,7 @@ pub mod qobject {
             output_uri: QString,
             hover_uri: QString,
             preview_uri: QString,
+            blured_preview: QString,
             width: u32,
             height: u32,
         );
@@ -65,13 +66,20 @@ impl qobject::SearchResults {
                     for attachment in attachments {
                         qt_thread
                             .queue(move |self_async| {
-                                let (output_uri, hover_uri, preview_uri, width, height) =
-                                    attachment.to_received_result_item();
+                                let (
+                                    output_uri,
+                                    hover_uri,
+                                    preview_uri,
+                                    blur_preview,
+                                    width,
+                                    height,
+                                ) = attachment.to_received_result_item();
 
                                 self_async.received_result(
                                     output_uri,
                                     hover_uri,
                                     preview_uri,
+                                    blur_preview,
                                     width,
                                     height,
                                 );
