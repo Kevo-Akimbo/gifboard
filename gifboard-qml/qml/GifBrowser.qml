@@ -13,7 +13,7 @@ Item {
     property int columnCount: 3
     property double columnWidth: 70
     property var columnModels: []
-    property var selectedIndices: new Set()
+    property var selectedIndices: new Map()
 
     signal query(string query)
 
@@ -50,12 +50,20 @@ Item {
 
                     Layout.fillWidth: true
 
-                    onImageCopied: imageOutputUri => {
-                        gifBrowser.clipboardManager.copyAsTemp(imageOutputUri);
+                    onUrlCopy: {
+                        gifBrowser.clipboardManager.copyUrls(Array.from(gifBrowser.selectedIndices.values()));
+                    }
+
+                    onTmpfileCopy: {
+                        gifBrowser.clipboardManager.copyUrlsToTmp(Array.from(gifBrowser.selectedIndices.values()));
+                    }
+
+                    onLocalCopy: {
+                        gifBrowser.clipboardManager.copyUrlsToLocal(Array.from(gifBrowser.selectedIndices.values()));
                     }
 
                     onSelect: {
-                        gifBrowser.selectedIndices.add(index);
+                        gifBrowser.selectedIndices.set(index, imageOutputUri);
                     }
 
                     onUnselect: {

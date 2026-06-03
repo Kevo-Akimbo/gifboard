@@ -117,14 +117,16 @@ ApplicationWindow {
     }
 
     property ClipboardManager clipboardManager: ClipboardManager {
-        onFileCopied: {
+        onUrlsCopied: {
             root.visible = false;
             if (root.x11Manager.onX11()) {
                 root.x11Manager.ungrabInput();
             }
         }
 
-        onClipboardChanged: {
+        // event only actives if gifboard has already copied
+        // gifboard stays open in the background until a new selection is made
+        onReleasedOwnership: {
             Qt.quit();
         }
     }
@@ -169,9 +171,9 @@ ApplicationWindow {
             }
 
             gifBrowser.columnModels[shortestColumn].append({
-                imageOutputUri: output_uri,
-                imageHoverUri: hover_uri,
-                imagePreviewUri: preview_uri,
+                imageOutputUri: new URL(output_uri),
+                imageHoverUri: new URL(hover_uri),
+                imagePreviewUri: new URL(preview_uri),
                 blurPreview: blur_preview,
                 imageHeight: height,
                 imageWidth: width,

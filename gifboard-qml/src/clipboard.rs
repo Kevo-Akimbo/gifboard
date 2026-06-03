@@ -23,8 +23,8 @@ pub mod ffi {
         #[rust_name = "set_urls"]
         fn setUrls(self: Pin<&mut QMimeData>, urls: &QList_QUrl);
 
-        // fn text(self: &QMimeData) -> QString;
-        // fn urls(self: &QMimeData) -> QList_QUrl;
+        #[rust_name = "set_text"]
+        fn setText(self: Pin<&mut QMimeData>, text: &QString);
 
         #[rust_name = "get_app_clipboard"]
         pub fn getAppClipboard() -> *mut QClipboard;
@@ -64,24 +64,42 @@ pub mod ffi {
         type ClipboardManager = super::ClipboardManagerRust;
 
         #[qinvokable]
-        #[cxx_name = "copyAsTemp"]
-        fn copy_as_temp(self: Pin<&mut Self>, url: &QString);
+        #[cxx_name = "copyUrls"]
+        fn copy_urls(self: Pin<&mut ClipboardManager>, urls: QList_QUrl);
+
+        #[qinvokable]
+        #[cxx_name = "copyUrlsToTmp"]
+        fn copy_urls_to_tmp(self: Pin<&mut ClipboardManager>, urls: QList_QUrl);
+
+        #[qinvokable]
+        #[cxx_name = "copyUrlsToLocal"]
+        fn copy_urls_to_local(self: Pin<&mut ClipboardManager>, urls: QList_QUrl);
 
         #[qsignal]
-        #[cxx_name = "fileCopied"]
-        fn file_copied(self: Pin<&mut Self>);
+        #[cxx_name = "urlsCopied"]
+        fn urls_copied(self: Pin<&mut Self>);
 
         #[qsignal]
-        #[cxx_name = "clipboardChanged"]
-        fn clipboard_changed(self: Pin<&mut Self>);
+        #[cxx_name = "releasedOwnership"]
+        fn released_ownership(self: Pin<&mut Self>);
     }
 
     impl cxx_qt::Threading for ClipboardManager {}
 }
 
 impl ffi::QMimeData {
-    fn new() -> cxx::UniquePtr<Self> {
+    fn new() -> cxx::UniquePtr<ffi::QMimeData> {
         ffi::QMimeData_New()
+    }
+    fn new_with_urls(urls: &ffi::QList_QUrl) -> cxx::UniquePtr<Self> {
+        let mut mimedata = Self::new();
+        mimedata.as_mut().expect("Mimedata is null").set_urls(urls);
+        mimedata
+    }
+    fn new_with_text(text: &ffi::QString) -> cxx::UniquePtr<Self> {
+        let mut mimedata = Self::new();
+        mimedata.as_mut().expect("Mimedata is null").set_text(text);
+        mimedata
     }
 }
 impl ffi::QClipboard {
@@ -95,11 +113,19 @@ impl ffi::QClipboard {
 }
 
 use crate::clipboard::ffi::QClipboardMode;
+use crate::clipboard::ffi::QMimeData;
+use cxx_qt::CxxQtType;
 use cxx_qt::Threading;
+use cxx_qt_lib::QString;
+use cxx_qt_lib::QStringList;
 use std::pin::Pin;
 
 pub struct ClipboardManagerRust {
     qclipboard: *mut ffi::QClipboard,
+    // Guard is not directly used but instead
+    // ownership is claimed to ensure lifetime
+    // lasts the lifetime of this struct
+    guard: Option<cxx_qt_lib::QMetaObjectConnectionGuard>,
 }
 
 impl Default for ClipboardManagerRust {
@@ -107,6 +133,7 @@ impl Default for ClipboardManagerRust {
         let qclipboard_ptr = ffi::get_app_clipboard();
         Self {
             qclipboard: qclipboard_ptr,
+            guard: None,
         }
     }
 }
@@ -120,31 +147,75 @@ impl ffi::ClipboardManager {
         unsafe { Pin::new_unchecked(qclipboard) }
     }
 
-    fn copy_as_temp(self: Pin<&mut Self>, url: &ffi::QString) {
+    fn clipboard_with_mime_data(
+        &self,
+        mime_data: cxx::UniquePtr<QMimeData>,
+    ) -> Pin<&mut ffi::QClipboard> {
         let mut clipboard = self.clipboard_pin();
-        let rx = gifboard_core::clipboard::save_url_to_temp(url);
-        let file_uri = rx.blocking_recv().unwrap();
-        let mut mime_data = ffi::QMimeData::new();
-        mime_data
-            .as_mut()
-            .unwrap()
-            .set_urls(&vec![ffi::QUrl::from(&file_uri)].into());
         clipboard
             .as_mut()
             .set_mime_data(mime_data, QClipboardMode::Clipboard);
-        println!("Copied to clipboard: {}", file_uri);
+        clipboard
+    }
 
+    fn capture_guard(self: Pin<&mut Self>, guard: cxx_qt_lib::QMetaObjectConnectionGuard) {
+        self.rust_mut().guard = Some(guard);
+    }
+
+    fn copy_urls(mut self: Pin<&mut Self>, urls: ffi::QList_QUrl) {
+        let mut list = QStringList::default();
+        for i in urls.into_iter() {
+            list.append(i.to_qstring());
+        }
+        let text = list.join(&QString::from("\n"));
+
+        let clipboard = self.clipboard_with_mime_data(QMimeData::new_with_text(&text));
         let qt_thread = self.qt_thread();
-        let conn = clipboard.on_data_changed(move |clipboard| {
+        let guard = clipboard.on_data_changed(move |clipboard| {
             if !clipboard.owns_clipboard() {
                 qt_thread
                     .queue(|self_async| {
-                        self_async.clipboard_changed();
+                        self_async.released_ownership();
                     })
                     .unwrap();
             }
         });
-        std::mem::forget(conn);
-        self.file_copied();
+        // capture lifetime of guard so it may be called for the lifetime of the program
+        self.as_mut().capture_guard(guard);
+        self.as_mut().urls_copied();
+    }
+
+    fn copy_urls_to_tmp(self: Pin<&mut Self>, urls: ffi::QList_QUrl) {
+        let rx = gifboard_core::clipboard::save_url_to_temp(urls);
+        let qt_thread = self.qt_thread();
+        gifboard_core::TOKIO.spawn(async move {
+            match rx.await {
+                Ok(Ok(urls)) => {
+                    qt_thread
+                        .queue(move |mut self_async| {
+                            let clipboard = self_async
+                                .clipboard_with_mime_data(QMimeData::new_with_urls(&urls));
+                            let qt_thread = self_async.qt_thread();
+                            let guard = clipboard.on_data_changed(move |clipboard| {
+                                if !clipboard.owns_clipboard() {
+                                    qt_thread
+                                        .queue(|self_async| self_async.released_ownership())
+                                        .unwrap();
+                                }
+                            });
+
+                            self_async.as_mut().capture_guard(guard);
+                            self_async.as_mut().urls_copied();
+                        })
+                        .unwrap();
+                }
+                Ok(Err(e)) => todo!("Handle errors: {}", e),
+                Err(e) => todo!("Handle errors: {}", e),
+            }
+        });
+    }
+
+    fn copy_urls_to_local(self: Pin<&mut Self>, urls: ffi::QList_QUrl) {
+        todo!("Local copy {:?}", urls);
     }
 }

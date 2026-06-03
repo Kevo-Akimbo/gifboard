@@ -4,15 +4,16 @@ import QtQuick 2.12
 Item {
     id: previewImageRoot
 
-    signal imageCopied(string outputUrl)
+    signal urlCopy
+    signal tmpfileCopy
+    signal localCopy
     signal select
     signal unselect
 
     required property Flickable gifFlickable
-
-    required property string imagePreviewUri
-    required property string imageHoverUri
-    required property string imageOutputUri
+    required property url imagePreviewUri
+    required property url imageHoverUri
+    required property url imageOutputUri
     required property string blurPreview
     required property int imageHeight
     required property int imageWidth
@@ -139,6 +140,7 @@ Item {
 
     MouseArea {
         anchors.fill: parent
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
         hoverEnabled: previewImageRoot.hasHoverImage
         propagateComposedEvents: true
         onEntered: {
@@ -150,19 +152,39 @@ Item {
             previewImageRoot.hovered = false;
             hoverTimer.stop();
         }
+
+        function toggleSelect() {
+            if (previewImageRoot.selected) {
+                previewImageRoot.selected = false;
+                previewImageRoot.unselect();
+            } else {
+                previewImageRoot.selected = true;
+                previewImageRoot.select();
+            }
+        }
+
         onClicked: mouse => {
-            if (mouse.modifiers & Qt.ShiftModifier) {
-                if (previewImageRoot.selected) {
-                    previewImageRoot.selected = false;
-                    previewImageRoot.unselect();
+            if (mouse.button === Qt.LeftButton) {
+                const ctrlShift = Qt.ShiftModifier | Qt.ControlModifier;
+                if ((mouse.modifiers & ctrlShift) == ctrlShift) {
+                    previewImageRoot.selected = true;
+                    previewImageRoot.select();
+                    previewImageRoot.localCopy();
+                } else if (mouse.modifiers & Qt.ShiftModifier) {
+                    toggleSelect();
+                } else if (mouse.modifiers & Qt.ControlModifier) {
+                    previewImageRoot.selected = true;
+                    previewImageRoot.select();
+                    previewImageRoot.tmpfileCopy();
                 } else {
                     previewImageRoot.selected = true;
                     previewImageRoot.select();
+                    previewImageRoot.urlCopy();
                 }
-                mouse.accepted = true;
-            } else {
-                previewImageRoot.imageCopied(previewImageRoot.imageOutputUri);
+            } else if (mouse.button === Qt.RightButton) {
+                toggleSelect();
             }
+            return true;
         }
     }
 }
