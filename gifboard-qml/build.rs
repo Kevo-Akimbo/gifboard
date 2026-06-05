@@ -10,7 +10,7 @@ fn main() {
         .unwrap();
 
     println!("cargo::rerun-if-env-changed=PKG_CONFIG_PATH");
-    pkg_config::Config::new().atleast_version("6.11").probe("Qt6Core").unwrap();
+    pkg_config::Config::new().atleast_version("6.10").probe("Qt6Core").unwrap();
 
     unsafe {
         #[cfg(not(debug_assertions))]

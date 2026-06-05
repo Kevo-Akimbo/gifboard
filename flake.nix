@@ -16,7 +16,6 @@
 
   outputs =
     {
-      self,
       nixpkgs,
       crane,
       flake-utils,
@@ -62,15 +61,6 @@
             libx11
           ];
         };
-
-        inherit
-          (import ./appimage.nix {
-            inherit pkgs qtEnv;
-            gifboard = self.packages.${system}.default;
-          })
-          build-appimage
-          appimagetool
-          ;
 
         src = lib.cleanSource ./.;
         cargoArtifacts = craneLib.buildDepsOnly commonArgs;
@@ -165,8 +155,6 @@
 
             pkgs.linuxdeploy
             pkgs.linuxdeploy-plugin-qt
-            build-appimage
-            appimagetool
           ];
 
           inherit (commonArgs) buildInputs nativeBuildInputs;
