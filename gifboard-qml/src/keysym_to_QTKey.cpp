@@ -1,7 +1,5 @@
-#include <algorithm>
 #include <cstdint>
 #include <sstream>
-#include <type_traits>
 
 #include <QChar>
 #include <QDebug>
@@ -9,467 +7,628 @@
 #include <xkbcommon/xkbcommon-keysyms.h>
 #include <xkbcommon/xkbcommon.h>
 
-struct XKBQTPair {
-  uint32_t xkb;
-  Qt::Key qt;
-
-  bool operator<(const XKBQTPair &other) const { return xkb < other.xkb; }
-  bool operator<=(const XKBQTPair &other) const { return xkb <= other.xkb; }
-};
-
-template <uint32_t XkbKey, Qt::Key QtKey> struct Xkb2Qt {
-  static constexpr XKBQTPair pair = {XkbKey, QtKey};
-
-  template <uint32_t OtherXKbKey, Qt::Key OtherQtKey>
-  inline constexpr bool
-  operator<(const Xkb2Qt<OtherXKbKey, OtherQtKey> &other) const {
-    return pair.xkb < other.pair.xkb;
+static inline Qt::Key keysym_map(xkb_keysym_t keysym) {
+  switch (keysym) {
+  case XKB_KEY_ISO_Left_Tab:
+    return Qt::Key_Backtab;
+  case XKB_KEY_BackSpace:
+    return Qt::Key_Backspace;
+  case XKB_KEY_Tab:
+    return Qt::Key_Tab;
+  case XKB_KEY_Clear:
+    return Qt::Key_Delete;
+  case XKB_KEY_Return:
+    return Qt::Key_Return;
+  case XKB_KEY_Pause:
+    return Qt::Key_Pause;
+  case XKB_KEY_Sys_Req:
+    return Qt::Key_SysReq;
+  case XKB_KEY_Escape:
+    return Qt::Key_Escape;
+  case XKB_KEY_Home:
+    return Qt::Key_Home;
+  case XKB_KEY_Left:
+    return Qt::Key_Left;
+  case XKB_KEY_Up:
+    return Qt::Key_Up;
+  case XKB_KEY_Right:
+    return Qt::Key_Right;
+  case XKB_KEY_Down:
+    return Qt::Key_Down;
+  case XKB_KEY_Prior:
+    return Qt::Key_PageUp;
+  case XKB_KEY_Next:
+    return Qt::Key_PageDown;
+  case XKB_KEY_End:
+    return Qt::Key_End;
+  case XKB_KEY_Print:
+    return Qt::Key_Print;
+  case XKB_KEY_Insert:
+    return Qt::Key_Insert;
+  case XKB_KEY_Shift_L:
+    return Qt::Key_Shift;
+  case XKB_KEY_Shift_R:
+    return Qt::Key_Shift;
+  case XKB_KEY_Control_L:
+    return Qt::Key_Control;
+  case XKB_KEY_Control_R:
+    return Qt::Key_Control;
+  case XKB_KEY_Caps_Lock:
+    return Qt::Key_CapsLock;
+  case XKB_KEY_Shift_Lock:
+    return Qt::Key_Shift;
+  case XKB_KEY_Meta_L:
+    return Qt::Key_Meta;
+  case XKB_KEY_Meta_R:
+    return Qt::Key_Meta;
+  case XKB_KEY_Alt_L:
+    return Qt::Key_Alt;
+  case XKB_KEY_Alt_R:
+    return Qt::Key_Alt;
+  case XKB_KEY_Num_Lock:
+    return Qt::Key_NumLock;
+  case XKB_KEY_Scroll_Lock:
+    return Qt::Key_ScrollLock;
+  case XKB_KEY_Super_L:
+    return Qt::Key_Super_L;
+  case XKB_KEY_Super_R:
+    return Qt::Key_Super_R;
+  case XKB_KEY_Delete:
+    return Qt::Key_Delete;
+  case 0x1005FF60:
+    return Qt::Key_SysReq;
+  case 0x1007ff00:
+    return Qt::Key_SysReq;
+  case XKB_KEY_Menu:
+    return Qt::Key_Menu;
+  case XKB_KEY_Hyper_L:
+    return Qt::Key_Hyper_L;
+  case XKB_KEY_Hyper_R:
+    return Qt::Key_Hyper_R;
+  case XKB_KEY_Help:
+    return Qt::Key_Help;
+  case 0x1000FF74:
+    return Qt::Key_Backtab;
+  case 0x1005FF10:
+    return Qt::Key_F11;
+  case 0x1005FF11:
+    return Qt::Key_F12;
+  case XKB_KEY_KP_Space:
+    return Qt::Key_Space;
+  case XKB_KEY_KP_Tab:
+    return Qt::Key_Tab;
+  case XKB_KEY_KP_Enter:
+    return Qt::Key_Enter;
+  case XKB_KEY_KP_Home:
+    return Qt::Key_Home;
+  case XKB_KEY_KP_Left:
+    return Qt::Key_Left;
+  case XKB_KEY_KP_Up:
+    return Qt::Key_Up;
+  case XKB_KEY_KP_Right:
+    return Qt::Key_Right;
+  case XKB_KEY_KP_Down:
+    return Qt::Key_Down;
+  case XKB_KEY_KP_Prior:
+    return Qt::Key_PageUp;
+  case XKB_KEY_KP_Next:
+    return Qt::Key_PageDown;
+  case XKB_KEY_KP_End:
+    return Qt::Key_End;
+  case XKB_KEY_KP_Begin:
+    return Qt::Key_Clear;
+  case XKB_KEY_KP_Insert:
+    return Qt::Key_Insert;
+  case XKB_KEY_KP_Delete:
+    return Qt::Key_Delete;
+  case XKB_KEY_KP_Equal:
+    return Qt::Key_Equal;
+  case XKB_KEY_KP_Multiply:
+    return Qt::Key_Asterisk;
+  case XKB_KEY_KP_Add:
+    return Qt::Key_Plus;
+  case XKB_KEY_KP_Separator:
+    return Qt::Key_Comma;
+  case XKB_KEY_KP_Subtract:
+    return Qt::Key_Minus;
+  case XKB_KEY_KP_Decimal:
+    return Qt::Key_Period;
+  case XKB_KEY_KP_Divide:
+    return Qt::Key_Slash;
+  case XKB_KEY_Undo:
+    return Qt::Key_Undo;
+  case XKB_KEY_Redo:
+    return Qt::Key_Redo;
+  case XKB_KEY_Find:
+    return Qt::Key_Find;
+  case XKB_KEY_Cancel:
+    return Qt::Key_Cancel;
+  case XKB_KEY_ISO_Level3_Shift:
+    return Qt::Key_AltGr;
+  case XKB_KEY_Multi_key:
+    return Qt::Key_Multi_key;
+  case XKB_KEY_Codeinput:
+    return Qt::Key_Codeinput;
+  case XKB_KEY_SingleCandidate:
+    return Qt::Key_SingleCandidate;
+  case XKB_KEY_MultipleCandidate:
+    return Qt::Key_MultipleCandidate;
+  case XKB_KEY_PreviousCandidate:
+    return Qt::Key_PreviousCandidate;
+  case XKB_KEY_Mode_switch:
+    return Qt::Key_Mode_switch;
+  // case XKB_KEY_script_switch:
+  //   return Qt::Key_Mode_switch;
+  case XKB_KEY_Kanji:
+    return Qt::Key_Kanji;
+  case XKB_KEY_Muhenkan:
+    return Qt::Key_Muhenkan;
+  case XKB_KEY_Henkan_Mode:
+    return Qt::Key_Henkan;
+  // case XKB_KEY_Henkan:
+  //   return Qt::Key_Henkan;
+  case XKB_KEY_Romaji:
+    return Qt::Key_Romaji;
+  case XKB_KEY_Hiragana:
+    return Qt::Key_Hiragana;
+  case XKB_KEY_Katakana:
+    return Qt::Key_Katakana;
+  case XKB_KEY_Hiragana_Katakana:
+    return Qt::Key_Hiragana_Katakana;
+  case XKB_KEY_Zenkaku:
+    return Qt::Key_Zenkaku;
+  case XKB_KEY_Hankaku:
+    return Qt::Key_Hankaku;
+  case XKB_KEY_Zenkaku_Hankaku:
+    return Qt::Key_Zenkaku_Hankaku;
+  case XKB_KEY_Touroku:
+    return Qt::Key_Touroku;
+  case XKB_KEY_Massyo:
+    return Qt::Key_Massyo;
+  case XKB_KEY_Kana_Lock:
+    return Qt::Key_Kana_Lock;
+  case XKB_KEY_Kana_Shift:
+    return Qt::Key_Kana_Shift;
+  case XKB_KEY_Eisu_Shift:
+    return Qt::Key_Eisu_Shift;
+  case XKB_KEY_Eisu_toggle:
+    return Qt::Key_Eisu_toggle;
+  // case XKB_KEY_Kanji_Bangou:
+  //   return Qt::Key_Codeinput;
+  // case XKB_KEY_Zen_Koho:
+  //   return Qt::Key_MultipleCandidate;
+  // case XKB_KEY_Mae_Koho:
+  //   return Qt::Key_PreviousCandidate;
+  case XKB_KEY_Hangul:
+    return Qt::Key_Hangul;
+  case XKB_KEY_Hangul_Start:
+    return Qt::Key_Hangul_Start;
+  case XKB_KEY_Hangul_End:
+    return Qt::Key_Hangul_End;
+  case XKB_KEY_Hangul_Hanja:
+    return Qt::Key_Hangul_Hanja;
+  case XKB_KEY_Hangul_Jamo:
+    return Qt::Key_Hangul_Jamo;
+  case XKB_KEY_Hangul_Romaja:
+    return Qt::Key_Hangul_Romaja;
+  // case XKB_KEY_Hangul_Codeinput:
+  //   return Qt::Key_Hangul_Codeinput;
+  // case XKB_KEY_Hangul_Codeinput:
+  //   return Qt::Key_Codeinput;
+  case XKB_KEY_Hangul_Jeonja:
+    return Qt::Key_Hangul_Jeonja;
+  case XKB_KEY_Hangul_Banja:
+    return Qt::Key_Hangul_Banja;
+  case XKB_KEY_Hangul_PreHanja:
+    return Qt::Key_Hangul_PreHanja;
+  case XKB_KEY_Hangul_PostHanja:
+    return Qt::Key_Hangul_PostHanja;
+  // case XKB_KEY_Hangul_SingleCandidate:
+  //   return Qt::Key_SingleCandidate;
+  // case XKB_KEY_Hangul_MultipleCandidate:
+  //   return Qt::Key_MultipleCandidate;
+  // case XKB_KEY_Hangul_PreviousCandidate:
+  //   return Qt::Key_PreviousCandidate;
+  case XKB_KEY_Hangul_Special:
+    return Qt::Key_Hangul_Special;
+  // case XKB_KEY_Hangul_switch:
+  //   return Qt::Key_Mode_switch;
+  case XKB_KEY_dead_grave:
+    return Qt::Key_Dead_Grave;
+  case XKB_KEY_dead_acute:
+    return Qt::Key_Dead_Acute;
+  case XKB_KEY_dead_circumflex:
+    return Qt::Key_Dead_Circumflex;
+  case XKB_KEY_dead_tilde:
+    return Qt::Key_Dead_Tilde;
+  case XKB_KEY_dead_macron:
+    return Qt::Key_Dead_Macron;
+  case XKB_KEY_dead_breve:
+    return Qt::Key_Dead_Breve;
+  case XKB_KEY_dead_abovedot:
+    return Qt::Key_Dead_Abovedot;
+  case XKB_KEY_dead_diaeresis:
+    return Qt::Key_Dead_Diaeresis;
+  case XKB_KEY_dead_abovering:
+    return Qt::Key_Dead_Abovering;
+  case XKB_KEY_dead_doubleacute:
+    return Qt::Key_Dead_Doubleacute;
+  case XKB_KEY_dead_caron:
+    return Qt::Key_Dead_Caron;
+  case XKB_KEY_dead_cedilla:
+    return Qt::Key_Dead_Cedilla;
+  case XKB_KEY_dead_ogonek:
+    return Qt::Key_Dead_Ogonek;
+  case XKB_KEY_dead_iota:
+    return Qt::Key_Dead_Iota;
+  case XKB_KEY_dead_voiced_sound:
+    return Qt::Key_Dead_Voiced_Sound;
+  case XKB_KEY_dead_semivoiced_sound:
+    return Qt::Key_Dead_Semivoiced_Sound;
+  case XKB_KEY_dead_belowdot:
+    return Qt::Key_Dead_Belowdot;
+  case XKB_KEY_dead_hook:
+    return Qt::Key_Dead_Hook;
+  case XKB_KEY_dead_horn:
+    return Qt::Key_Dead_Horn;
+  case XKB_KEY_dead_stroke:
+    return Qt::Key_Dead_Stroke;
+  case XKB_KEY_dead_abovecomma:
+    return Qt::Key_Dead_Abovecomma;
+  case XKB_KEY_dead_abovereversedcomma:
+    return Qt::Key_Dead_Abovereversedcomma;
+  case XKB_KEY_dead_doublegrave:
+    return Qt::Key_Dead_Doublegrave;
+  case XKB_KEY_dead_belowring:
+    return Qt::Key_Dead_Belowring;
+  case XKB_KEY_dead_belowmacron:
+    return Qt::Key_Dead_Belowmacron;
+  case XKB_KEY_dead_belowcircumflex:
+    return Qt::Key_Dead_Belowcircumflex;
+  case XKB_KEY_dead_belowtilde:
+    return Qt::Key_Dead_Belowtilde;
+  case XKB_KEY_dead_belowbreve:
+    return Qt::Key_Dead_Belowbreve;
+  case XKB_KEY_dead_belowdiaeresis:
+    return Qt::Key_Dead_Belowdiaeresis;
+  case XKB_KEY_dead_invertedbreve:
+    return Qt::Key_Dead_Invertedbreve;
+  case XKB_KEY_dead_belowcomma:
+    return Qt::Key_Dead_Belowcomma;
+  case XKB_KEY_dead_currency:
+    return Qt::Key_Dead_Currency;
+  case XKB_KEY_dead_a:
+    return Qt::Key_Dead_a;
+  case XKB_KEY_dead_A:
+    return Qt::Key_Dead_A;
+  case XKB_KEY_dead_e:
+    return Qt::Key_Dead_e;
+  case XKB_KEY_dead_E:
+    return Qt::Key_Dead_E;
+  case XKB_KEY_dead_i:
+    return Qt::Key_Dead_i;
+  case XKB_KEY_dead_I:
+    return Qt::Key_Dead_I;
+  case XKB_KEY_dead_o:
+    return Qt::Key_Dead_o;
+  case XKB_KEY_dead_O:
+    return Qt::Key_Dead_O;
+  case XKB_KEY_dead_u:
+    return Qt::Key_Dead_u;
+  case XKB_KEY_dead_U:
+    return Qt::Key_Dead_U;
+  case XKB_KEY_dead_small_schwa:
+    return Qt::Key_Dead_Small_Schwa;
+  case XKB_KEY_dead_capital_schwa:
+    return Qt::Key_Dead_Capital_Schwa;
+  case XKB_KEY_dead_greek:
+    return Qt::Key_Dead_Greek;
+  case XKB_KEY_dead_lowline:
+    return Qt::Key_Dead_Lowline;
+  case XKB_KEY_dead_aboveverticalline:
+    return Qt::Key_Dead_Aboveverticalline;
+  case XKB_KEY_dead_belowverticalline:
+    return Qt::Key_Dead_Belowverticalline;
+  case XKB_KEY_dead_longsolidusoverlay:
+    return Qt::Key_Dead_Longsolidusoverlay;
+  case XKB_KEY_XF86Back:
+    return Qt::Key_Back;
+  case XKB_KEY_XF86Forward:
+    return Qt::Key_Forward;
+  case XKB_KEY_XF86Stop:
+    return Qt::Key_Stop;
+  case XKB_KEY_XF86Refresh:
+    return Qt::Key_Refresh;
+  case XKB_KEY_XF86Favorites:
+    return Qt::Key_Favorites;
+  case XKB_KEY_XF86AudioMedia:
+    return Qt::Key_LaunchMedia;
+  case XKB_KEY_XF86OpenURL:
+    return Qt::Key_OpenUrl;
+  case XKB_KEY_XF86HomePage:
+    return Qt::Key_HomePage;
+  case XKB_KEY_XF86Search:
+    return Qt::Key_Search;
+  case XKB_KEY_XF86AudioLowerVolume:
+    return Qt::Key_VolumeDown;
+  case XKB_KEY_XF86AudioMute:
+    return Qt::Key_VolumeMute;
+  case XKB_KEY_XF86AudioRaiseVolume:
+    return Qt::Key_VolumeUp;
+  case XKB_KEY_XF86AudioPlay:
+    return Qt::Key_MediaPlay;
+  case XKB_KEY_XF86AudioStop:
+    return Qt::Key_MediaStop;
+  case XKB_KEY_XF86AudioPrev:
+    return Qt::Key_MediaPrevious;
+  case XKB_KEY_XF86AudioNext:
+    return Qt::Key_MediaNext;
+  case XKB_KEY_XF86AudioRecord:
+    return Qt::Key_MediaRecord;
+  case XKB_KEY_XF86AudioPause:
+    return Qt::Key_MediaPause;
+  case XKB_KEY_XF86Mail:
+    return Qt::Key_LaunchMail;
+  case XKB_KEY_XF86MyComputer:
+    return Qt::Key_LaunchMedia;
+  case XKB_KEY_XF86Memo:
+    return Qt::Key_Memo;
+  case XKB_KEY_XF86ToDoList:
+    return Qt::Key_ToDoList;
+  case XKB_KEY_XF86Calendar:
+    return Qt::Key_Calendar;
+  case XKB_KEY_XF86PowerDown:
+    return Qt::Key_PowerDown;
+  case XKB_KEY_XF86ContrastAdjust:
+    return Qt::Key_ContrastAdjust;
+  case XKB_KEY_XF86Standby:
+    return Qt::Key_Standby;
+  case XKB_KEY_XF86MonBrightnessUp:
+    return Qt::Key_MonBrightnessUp;
+  case XKB_KEY_XF86MonBrightnessDown:
+    return Qt::Key_MonBrightnessDown;
+  case XKB_KEY_XF86KbdLightOnOff:
+    return Qt::Key_KeyboardLightOnOff;
+  case XKB_KEY_XF86KbdBrightnessUp:
+    return Qt::Key_KeyboardBrightnessUp;
+  case XKB_KEY_XF86KbdBrightnessDown:
+    return Qt::Key_KeyboardBrightnessDown;
+  case XKB_KEY_XF86PowerOff:
+    return Qt::Key_PowerOff;
+  case XKB_KEY_XF86WakeUp:
+    return Qt::Key_WakeUp;
+  case XKB_KEY_XF86Eject:
+    return Qt::Key_Eject;
+  case XKB_KEY_XF86ScreenSaver:
+    return Qt::Key_ScreenSaver;
+  case XKB_KEY_XF86WWW:
+    return Qt::Key_WWW;
+  case XKB_KEY_XF86Sleep:
+    return Qt::Key_Sleep;
+  case XKB_KEY_XF86LightBulb:
+    return Qt::Key_LightBulb;
+  case XKB_KEY_XF86Shop:
+    return Qt::Key_Shop;
+  case XKB_KEY_XF86History:
+    return Qt::Key_History;
+  case XKB_KEY_XF86AddFavorite:
+    return Qt::Key_AddFavorite;
+  case XKB_KEY_XF86HotLinks:
+    return Qt::Key_HotLinks;
+  case XKB_KEY_XF86BrightnessAdjust:
+    return Qt::Key_BrightnessAdjust;
+  case XKB_KEY_XF86Finance:
+    return Qt::Key_Finance;
+  case XKB_KEY_XF86Community:
+    return Qt::Key_Community;
+  case XKB_KEY_XF86AudioRewind:
+    return Qt::Key_AudioRewind;
+  case XKB_KEY_XF86BackForward:
+    return Qt::Key_BackForward;
+  case XKB_KEY_XF86ApplicationLeft:
+    return Qt::Key_ApplicationLeft;
+  case XKB_KEY_XF86ApplicationRight:
+    return Qt::Key_ApplicationRight;
+  case XKB_KEY_XF86Book:
+    return Qt::Key_Book;
+  case XKB_KEY_XF86CD:
+    return Qt::Key_CD;
+  case XKB_KEY_XF86Calculater:
+    return Qt::Key_Calculator;
+  case XKB_KEY_XF86Calculator:
+    return Qt::Key_Calculator;
+  case XKB_KEY_XF86Clear:
+    return Qt::Key_Clear;
+  case XKB_KEY_XF86ClearGrab:
+    return Qt::Key_ClearGrab;
+  case XKB_KEY_XF86Close:
+    return Qt::Key_Close;
+  case XKB_KEY_XF86Copy:
+    return Qt::Key_Copy;
+  case XKB_KEY_XF86Cut:
+    return Qt::Key_Cut;
+  case XKB_KEY_XF86Display:
+    return Qt::Key_Display;
+  case XKB_KEY_XF86DOS:
+    return Qt::Key_DOS;
+  case XKB_KEY_XF86Documents:
+    return Qt::Key_Documents;
+  case XKB_KEY_XF86Excel:
+    return Qt::Key_Excel;
+  case XKB_KEY_XF86Explorer:
+    return Qt::Key_Explorer;
+  case XKB_KEY_XF86Game:
+    return Qt::Key_Game;
+  case XKB_KEY_XF86Go:
+    return Qt::Key_Go;
+  case XKB_KEY_XF86iTouch:
+    return Qt::Key_iTouch;
+  case XKB_KEY_XF86LogOff:
+    return Qt::Key_LogOff;
+  case XKB_KEY_XF86Market:
+    return Qt::Key_Market;
+  case XKB_KEY_XF86Meeting:
+    return Qt::Key_Meeting;
+  case XKB_KEY_XF86MenuKB:
+    return Qt::Key_MenuKB;
+  case XKB_KEY_XF86MenuPB:
+    return Qt::Key_MenuPB;
+  case XKB_KEY_XF86MySites:
+    return Qt::Key_MySites;
+  case XKB_KEY_XF86New:
+    return Qt::Key_New;
+  case XKB_KEY_XF86News:
+    return Qt::Key_News;
+  case XKB_KEY_XF86OfficeHome:
+    return Qt::Key_OfficeHome;
+  case XKB_KEY_XF86Open:
+    return Qt::Key_Open;
+  case XKB_KEY_XF86Option:
+    return Qt::Key_Option;
+  case XKB_KEY_XF86Paste:
+    return Qt::Key_Paste;
+  case XKB_KEY_XF86Phone:
+    return Qt::Key_Phone;
+  case XKB_KEY_XF86PickupPhone:
+    return Qt::Key_Call;
+  case XKB_KEY_XF86HangupPhone:
+    return Qt::Key_Hangup;
+  case XKB_KEY_XF86Reply:
+    return Qt::Key_Reply;
+  case XKB_KEY_XF86Reload:
+    return Qt::Key_Reload;
+  case XKB_KEY_XF86RotateWindows:
+    return Qt::Key_RotateWindows;
+  case XKB_KEY_XF86RotationPB:
+    return Qt::Key_RotationPB;
+  case XKB_KEY_XF86RotationKB:
+    return Qt::Key_RotationKB;
+  case XKB_KEY_XF86Save:
+    return Qt::Key_Save;
+  case XKB_KEY_XF86Send:
+    return Qt::Key_Send;
+  case XKB_KEY_XF86Spell:
+    return Qt::Key_Spell;
+  case XKB_KEY_XF86SplitScreen:
+    return Qt::Key_SplitScreen;
+  case XKB_KEY_XF86Support:
+    return Qt::Key_Support;
+  case XKB_KEY_XF86TaskPane:
+    return Qt::Key_TaskPane;
+  case XKB_KEY_XF86Terminal:
+    return Qt::Key_Terminal;
+  case XKB_KEY_XF86Tools:
+    return Qt::Key_Tools;
+  case XKB_KEY_XF86Travel:
+    return Qt::Key_Travel;
+  case XKB_KEY_XF86Video:
+    return Qt::Key_Video;
+  case XKB_KEY_XF86Word:
+    return Qt::Key_Word;
+  case XKB_KEY_XF86Xfer:
+    return Qt::Key_Xfer;
+  case XKB_KEY_XF86ZoomIn:
+    return Qt::Key_ZoomIn;
+  case XKB_KEY_XF86ZoomOut:
+    return Qt::Key_ZoomOut;
+  case XKB_KEY_XF86Away:
+    return Qt::Key_Away;
+  case XKB_KEY_XF86Messenger:
+    return Qt::Key_Messenger;
+  case XKB_KEY_XF86WebCam:
+    return Qt::Key_WebCam;
+  case XKB_KEY_XF86MailForward:
+    return Qt::Key_MailForward;
+  case XKB_KEY_XF86Pictures:
+    return Qt::Key_Pictures;
+  case XKB_KEY_XF86Music:
+    return Qt::Key_Music;
+  case XKB_KEY_XF86Battery:
+    return Qt::Key_Battery;
+  // case XKB_KEY_XF86Bluetooth:
+  //   return Qt::Key_Bluetooth;
+  case XKB_KEY_XF86WLAN:
+    return Qt::Key_WLAN;
+  case XKB_KEY_XF86UWB:
+    return Qt::Key_UWB;
+  case XKB_KEY_XF86AudioForward:
+    return Qt::Key_AudioForward;
+  case XKB_KEY_XF86AudioRepeat:
+    return Qt::Key_AudioRepeat;
+  case XKB_KEY_XF86AudioRandomPlay:
+    return Qt::Key_AudioRandomPlay;
+  case XKB_KEY_XF86Subtitle:
+    return Qt::Key_Subtitle;
+  case XKB_KEY_XF86AudioCycleTrack:
+    return Qt::Key_AudioCycleTrack;
+  case XKB_KEY_XF86Time:
+    return Qt::Key_Time;
+  case XKB_KEY_XF86Select:
+    return Qt::Key_Select;
+  case XKB_KEY_XF86View:
+    return Qt::Key_View;
+  case XKB_KEY_XF86TopMenu:
+    return Qt::Key_TopMenu;
+  case XKB_KEY_XF86Red:
+    return Qt::Key_Red;
+  case XKB_KEY_XF86Green:
+    return Qt::Key_Green;
+  case XKB_KEY_XF86Yellow:
+    return Qt::Key_Yellow;
+  case XKB_KEY_XF86Blue:
+    return Qt::Key_Blue;
+  case XKB_KEY_XF86Bluetooth:
+    return Qt::Key_Bluetooth;
+  case XKB_KEY_XF86Suspend:
+    return Qt::Key_Suspend;
+  case XKB_KEY_XF86Hibernate:
+    return Qt::Key_Hibernate;
+  case XKB_KEY_XF86TouchpadToggle:
+    return Qt::Key_TouchpadToggle;
+  case XKB_KEY_XF86TouchpadOn:
+    return Qt::Key_TouchpadOn;
+  case XKB_KEY_XF86TouchpadOff:
+    return Qt::Key_TouchpadOff;
+  case XKB_KEY_XF86AudioMicMute:
+    return Qt::Key_MicMute;
+  case XKB_KEY_XF86Keyboard:
+    return Qt::Key_Keyboard;
+  case XKB_KEY_XF86Launch0:
+    return Qt::Key_Launch0;
+  case XKB_KEY_XF86Launch1:
+    return Qt::Key_Launch1;
+  case XKB_KEY_XF86Launch2:
+    return Qt::Key_Launch2;
+  case XKB_KEY_XF86Launch3:
+    return Qt::Key_Launch3;
+  case XKB_KEY_XF86Launch4:
+    return Qt::Key_Launch4;
+  case XKB_KEY_XF86Launch5:
+    return Qt::Key_Launch5;
+  case XKB_KEY_XF86Launch6:
+    return Qt::Key_Launch6;
+  case XKB_KEY_XF86Launch7:
+    return Qt::Key_Launch7;
+  case XKB_KEY_XF86Launch8:
+    return Qt::Key_Launch8;
+  case XKB_KEY_XF86Launch9:
+    return Qt::Key_Launch9;
+  case XKB_KEY_XF86LaunchA:
+    return Qt::Key_LaunchA;
+  case XKB_KEY_XF86LaunchB:
+    return Qt::Key_LaunchB;
+  case XKB_KEY_XF86LaunchC:
+    return Qt::Key_LaunchC;
+  case XKB_KEY_XF86LaunchD:
+    return Qt::Key_LaunchD;
+  case XKB_KEY_XF86LaunchE:
+    return Qt::Key_LaunchE;
+  case XKB_KEY_XF86LaunchF:
+    return Qt::Key_LaunchF;
+  default:
+    return Qt::Key_unknown;
   }
-
-  template <uint32_t OtherXKbKey, Qt::Key OtherQtKey>
-  inline constexpr bool
-  operator>=(const Xkb2Qt<OtherXKbKey, OtherQtKey> &other) const {
-    return pair.xkb >= other.pair.xkb;
-  }
-};
-
-struct Nil {};
-
-template <typename X, typename XS> struct Cons {};
-
-template <typename... Ts> struct List;
-
-template <typename X, typename... XS> struct List<X, XS...> {
-  using cons_list = Cons<X, typename List<XS...>::cons_list>;
-};
-
-template <typename X> struct List<X> {
-  using cons_list = Cons<X, Nil>;
-};
-
-template <> struct List<> {
-  using cons_list = Nil;
-};
-
-template <typename List, template <class> class F> struct Filter {
-  using type = Filter<typename List::cons_list, F>::type;
-};
-
-template <template <class> class F> struct Filter<Nil, F> {
-  using type = Nil;
-};
-
-template <typename X, typename XS, template <class> class F>
-struct Filter<Cons<X, XS>, F> {
-  using type =
-      std::conditional<F<X>::out, Cons<X, typename Filter<XS, F>::type>,
-                       typename Filter<XS, F>::type>::type;
-};
-
-template <typename L, typename R> struct GTE {
-  static const bool out = L{} >= R{};
-};
-
-template <typename L, typename R> struct LT {
-  static const bool out = L{} < R{};
-};
-
-template <typename L, typename R> struct Append {
-  using type = Append<typename L::cons_list, typename R::cons_list>::type;
-};
-
-template <typename X, typename XS> struct Append<Nil, Cons<X, XS>> {
-  using type = Cons<X, XS>;
-};
-
-template <typename X, typename XS, typename R> struct Append<Cons<X, XS>, R> {
-  using type = Cons<X, typename Append<XS, R>::type>;
-};
-
-template <typename List> struct Qsort {
-  using type = Qsort<typename List::cons_list>::type;
-};
-
-template <> struct Qsort<Nil> {
-  using type = Nil;
-};
-
-template <typename X, typename XS> struct Qsort<Cons<X, XS>> {
-private:
-  template <typename Y> using LTPartial = LT<Y, X>;
-  template <typename Y> using GTEPartial = GTE<Y, X>;
-  using l = Qsort<typename Filter<XS, LTPartial>::type>::type;
-  using r = Qsort<typename Filter<XS, GTEPartial>::type>::type;
-  using m = Cons<X, r>;
-
-public:
-  using type = Append<l, m>::type;
-};
-using list =
-    List<std::integral_constant<int, 1>, std::integral_constant<int, 7>,
-         std::integral_constant<int, 5>, std::integral_constant<int, 2>,
-         std::integral_constant<int, 8>, std::integral_constant<int, 9>,
-         std::integral_constant<int, 4>>;
-
-template <typename T> struct ToList;
-
-template <> struct ToList<Nil> {
-  using type = List<>;
-};
-
-template <typename X, typename XS> struct ToList<Cons<X, XS>> {
-private:
-  using tail_list = ToList<XS>::type;
-  template <typename... Ts> static List<X, Ts...> helper(List<Ts...>);
-
-public:
-  using type = decltype(helper(std::declval<tail_list>()));
-};
-
-using foo = Qsort<list>::type;
-using foo_l = ToList<foo>::type;
-
-template <typename ListT> struct ToArray;
-
-template <typename... Args> struct ToArray<List<Args...>> {
-  static constexpr std::array<XKBQTPair, sizeof...(Args)> data{Args::pair...};
-};
-
-template <typename... Args> struct ToSortedArray {
-
-  using sorted = ToList<typename Qsort<List<Args...>>::type>::type;
-
-  static constexpr auto data = ToArray<sorted>::data;
-};
-
-static constexpr const auto KeyTbl = ToSortedArray<
-    Xkb2Qt<XKB_KEY_ISO_Left_Tab, Qt::Key_Backtab>,
-    Xkb2Qt<XKB_KEY_BackSpace, Qt::Key_Backspace>,
-    Xkb2Qt<XKB_KEY_Tab, Qt::Key_Tab>, Xkb2Qt<XKB_KEY_Clear, Qt::Key_Delete>,
-    Xkb2Qt<XKB_KEY_Return, Qt::Key_Return>,
-    Xkb2Qt<XKB_KEY_Pause, Qt::Key_Pause>,
-    Xkb2Qt<XKB_KEY_Sys_Req, Qt::Key_SysReq>,
-    Xkb2Qt<XKB_KEY_Escape, Qt::Key_Escape>, Xkb2Qt<XKB_KEY_Home, Qt::Key_Home>,
-    Xkb2Qt<XKB_KEY_Left, Qt::Key_Left>, Xkb2Qt<XKB_KEY_Up, Qt::Key_Up>,
-    Xkb2Qt<XKB_KEY_Right, Qt::Key_Right>, Xkb2Qt<XKB_KEY_Down, Qt::Key_Down>,
-    Xkb2Qt<XKB_KEY_Prior, Qt::Key_PageUp>,
-    Xkb2Qt<XKB_KEY_Next, Qt::Key_PageDown>, Xkb2Qt<XKB_KEY_End, Qt::Key_End>,
-    Xkb2Qt<XKB_KEY_Print, Qt::Key_Print>,
-    Xkb2Qt<XKB_KEY_Insert, Qt::Key_Insert>,
-    Xkb2Qt<XKB_KEY_Shift_L, Qt::Key_Shift>,
-    Xkb2Qt<XKB_KEY_Shift_R, Qt::Key_Shift>,
-    Xkb2Qt<XKB_KEY_Control_L, Qt::Key_Control>,
-    Xkb2Qt<XKB_KEY_Control_R, Qt::Key_Control>,
-    Xkb2Qt<XKB_KEY_Caps_Lock, Qt::Key_CapsLock>,
-    Xkb2Qt<XKB_KEY_Shift_Lock, Qt::Key_Shift>,
-    Xkb2Qt<XKB_KEY_Meta_L, Qt::Key_Meta>, Xkb2Qt<XKB_KEY_Meta_R, Qt::Key_Meta>,
-    Xkb2Qt<XKB_KEY_Alt_L, Qt::Key_Alt>, Xkb2Qt<XKB_KEY_Alt_R, Qt::Key_Alt>,
-    Xkb2Qt<XKB_KEY_Num_Lock, Qt::Key_NumLock>,
-    Xkb2Qt<XKB_KEY_Scroll_Lock, Qt::Key_ScrollLock>,
-    Xkb2Qt<XKB_KEY_Super_L, Qt::Key_Super_L>,
-    Xkb2Qt<XKB_KEY_Super_R, Qt::Key_Super_R>,
-    Xkb2Qt<XKB_KEY_Delete, Qt::Key_Delete>,
-    Xkb2Qt<0x1005FF60, Qt::Key_SysReq>, // hardcoded Sun SysReq
-    Xkb2Qt<0x1007ff00, Qt::Key_SysReq>, // hardcoded X386 SysReq
-    Xkb2Qt<XKB_KEY_Menu, Qt::Key_Menu>,
-    Xkb2Qt<XKB_KEY_Hyper_L, Qt::Key_Hyper_L>,
-    Xkb2Qt<XKB_KEY_Hyper_R, Qt::Key_Hyper_R>,
-    Xkb2Qt<XKB_KEY_Help, Qt::Key_Help>,
-    Xkb2Qt<0x1000FF74, Qt::Key_Backtab>, // hardcoded HP backtab
-    Xkb2Qt<0x1005FF10, Qt::Key_F11>,     // hardcoded Sun F36
-    Xkb2Qt<0x1005FF11, Qt::Key_F12>,     // hardcoded Sun
-
-    // numeric and function keypad keys
-
-    Xkb2Qt<XKB_KEY_KP_Space, Qt::Key_Space>,
-    Xkb2Qt<XKB_KEY_KP_Tab, Qt::Key_Tab>,
-    Xkb2Qt<XKB_KEY_KP_Enter, Qt::Key_Enter>,
-    Xkb2Qt<XKB_KEY_KP_Home, Qt::Key_Home>,
-    Xkb2Qt<XKB_KEY_KP_Left, Qt::Key_Left>, Xkb2Qt<XKB_KEY_KP_Up, Qt::Key_Up>,
-    Xkb2Qt<XKB_KEY_KP_Right, Qt::Key_Right>,
-    Xkb2Qt<XKB_KEY_KP_Down, Qt::Key_Down>,
-    Xkb2Qt<XKB_KEY_KP_Prior, Qt::Key_PageUp>,
-    Xkb2Qt<XKB_KEY_KP_Next, Qt::Key_PageDown>,
-    Xkb2Qt<XKB_KEY_KP_End, Qt::Key_End>,
-    Xkb2Qt<XKB_KEY_KP_Begin, Qt::Key_Clear>,
-    Xkb2Qt<XKB_KEY_KP_Insert, Qt::Key_Insert>,
-    Xkb2Qt<XKB_KEY_KP_Delete, Qt::Key_Delete>,
-    Xkb2Qt<XKB_KEY_KP_Equal, Qt::Key_Equal>,
-    Xkb2Qt<XKB_KEY_KP_Multiply, Qt::Key_Asterisk>,
-    Xkb2Qt<XKB_KEY_KP_Add, Qt::Key_Plus>,
-    Xkb2Qt<XKB_KEY_KP_Separator, Qt::Key_Comma>,
-    Xkb2Qt<XKB_KEY_KP_Subtract, Qt::Key_Minus>,
-    Xkb2Qt<XKB_KEY_KP_Decimal, Qt::Key_Period>,
-    Xkb2Qt<XKB_KEY_KP_Divide, Qt::Key_Slash>,
-
-    // special non-XF86 function keys
-
-    Xkb2Qt<XKB_KEY_Undo, Qt::Key_Undo>, Xkb2Qt<XKB_KEY_Redo, Qt::Key_Redo>,
-    Xkb2Qt<XKB_KEY_Find, Qt::Key_Find>, Xkb2Qt<XKB_KEY_Cancel, Qt::Key_Cancel>,
-
-    // International input method support keys
-
-    // International & multi-key character composition
-    Xkb2Qt<XKB_KEY_ISO_Level3_Shift, Qt::Key_AltGr>,
-    Xkb2Qt<XKB_KEY_Multi_key, Qt::Key_Multi_key>,
-    Xkb2Qt<XKB_KEY_Codeinput, Qt::Key_Codeinput>,
-    Xkb2Qt<XKB_KEY_SingleCandidate, Qt::Key_SingleCandidate>,
-    Xkb2Qt<XKB_KEY_MultipleCandidate, Qt::Key_MultipleCandidate>,
-    Xkb2Qt<XKB_KEY_PreviousCandidate, Qt::Key_PreviousCandidate>,
-
-    // Misc Functions
-    Xkb2Qt<XKB_KEY_Mode_switch, Qt::Key_Mode_switch>,
-    Xkb2Qt<XKB_KEY_script_switch, Qt::Key_Mode_switch>,
-
-    // Japanese keyboard support
-    Xkb2Qt<XKB_KEY_Kanji, Qt::Key_Kanji>,
-    Xkb2Qt<XKB_KEY_Muhenkan, Qt::Key_Muhenkan>,
-    // Xkb2Qt<XKB_KEY_Henkan_Mode,           Qt::Key_Henkan_Mode>,
-    Xkb2Qt<XKB_KEY_Henkan_Mode, Qt::Key_Henkan>,
-    Xkb2Qt<XKB_KEY_Henkan, Qt::Key_Henkan>,
-    Xkb2Qt<XKB_KEY_Romaji, Qt::Key_Romaji>,
-    Xkb2Qt<XKB_KEY_Hiragana, Qt::Key_Hiragana>,
-    Xkb2Qt<XKB_KEY_Katakana, Qt::Key_Katakana>,
-    Xkb2Qt<XKB_KEY_Hiragana_Katakana, Qt::Key_Hiragana_Katakana>,
-    Xkb2Qt<XKB_KEY_Zenkaku, Qt::Key_Zenkaku>,
-    Xkb2Qt<XKB_KEY_Hankaku, Qt::Key_Hankaku>,
-    Xkb2Qt<XKB_KEY_Zenkaku_Hankaku, Qt::Key_Zenkaku_Hankaku>,
-    Xkb2Qt<XKB_KEY_Touroku, Qt::Key_Touroku>,
-    Xkb2Qt<XKB_KEY_Massyo, Qt::Key_Massyo>,
-    Xkb2Qt<XKB_KEY_Kana_Lock, Qt::Key_Kana_Lock>,
-    Xkb2Qt<XKB_KEY_Kana_Shift, Qt::Key_Kana_Shift>,
-    Xkb2Qt<XKB_KEY_Eisu_Shift, Qt::Key_Eisu_Shift>,
-    Xkb2Qt<XKB_KEY_Eisu_toggle, Qt::Key_Eisu_toggle>,
-    // Xkb2Qt<XKB_KEY_Kanji_Bangou,          Qt::Key_Kanji_Bangou>,
-    // Xkb2Qt<XKB_KEY_Zen_Koho,              Qt::Key_Zen_Koho>,
-    // Xkb2Qt<XKB_KEY_Mae_Koho,              Qt::Key_Mae_Koho>,
-    Xkb2Qt<XKB_KEY_Kanji_Bangou, Qt::Key_Codeinput>,
-    Xkb2Qt<XKB_KEY_Zen_Koho, Qt::Key_MultipleCandidate>,
-    Xkb2Qt<XKB_KEY_Mae_Koho, Qt::Key_PreviousCandidate>,
-
-    // Korean keyboard support
-    Xkb2Qt<XKB_KEY_Hangul, Qt::Key_Hangul>,
-    Xkb2Qt<XKB_KEY_Hangul_Start, Qt::Key_Hangul_Start>,
-    Xkb2Qt<XKB_KEY_Hangul_End, Qt::Key_Hangul_End>,
-    Xkb2Qt<XKB_KEY_Hangul_Hanja, Qt::Key_Hangul_Hanja>,
-    Xkb2Qt<XKB_KEY_Hangul_Jamo, Qt::Key_Hangul_Jamo>,
-    Xkb2Qt<XKB_KEY_Hangul_Romaja, Qt::Key_Hangul_Romaja>,
-    // Xkb2Qt<XKB_KEY_Hangul_Codeinput, Qt::Key_Hangul_Codeinput>,
-    Xkb2Qt<XKB_KEY_Hangul_Codeinput, Qt::Key_Codeinput>,
-    Xkb2Qt<XKB_KEY_Hangul_Jeonja, Qt::Key_Hangul_Jeonja>,
-    Xkb2Qt<XKB_KEY_Hangul_Banja, Qt::Key_Hangul_Banja>,
-    Xkb2Qt<XKB_KEY_Hangul_PreHanja, Qt::Key_Hangul_PreHanja>,
-    Xkb2Qt<XKB_KEY_Hangul_PostHanja, Qt::Key_Hangul_PostHanja>,
-    Xkb2Qt<XKB_KEY_Hangul_SingleCandidate, Qt::Key_SingleCandidate>,
-    Xkb2Qt<XKB_KEY_Hangul_MultipleCandidate, Qt::Key_MultipleCandidate>,
-    Xkb2Qt<XKB_KEY_Hangul_PreviousCandidate, Qt::Key_PreviousCandidate>,
-    Xkb2Qt<XKB_KEY_Hangul_Special, Qt::Key_Hangul_Special>,
-    // Xkb2Qt<XKB_KEY_Hangul_switch,         Qt::Key_Hangul_switch>,
-    Xkb2Qt<XKB_KEY_Hangul_switch, Qt::Key_Mode_switch>,
-
-    // dead keys
-    Xkb2Qt<XKB_KEY_dead_grave, Qt::Key_Dead_Grave>,
-    Xkb2Qt<XKB_KEY_dead_acute, Qt::Key_Dead_Acute>,
-    Xkb2Qt<XKB_KEY_dead_circumflex, Qt::Key_Dead_Circumflex>,
-    Xkb2Qt<XKB_KEY_dead_tilde, Qt::Key_Dead_Tilde>,
-    Xkb2Qt<XKB_KEY_dead_macron, Qt::Key_Dead_Macron>,
-    Xkb2Qt<XKB_KEY_dead_breve, Qt::Key_Dead_Breve>,
-    Xkb2Qt<XKB_KEY_dead_abovedot, Qt::Key_Dead_Abovedot>,
-    Xkb2Qt<XKB_KEY_dead_diaeresis, Qt::Key_Dead_Diaeresis>,
-    Xkb2Qt<XKB_KEY_dead_abovering, Qt::Key_Dead_Abovering>,
-    Xkb2Qt<XKB_KEY_dead_doubleacute, Qt::Key_Dead_Doubleacute>,
-    Xkb2Qt<XKB_KEY_dead_caron, Qt::Key_Dead_Caron>,
-    Xkb2Qt<XKB_KEY_dead_cedilla, Qt::Key_Dead_Cedilla>,
-    Xkb2Qt<XKB_KEY_dead_ogonek, Qt::Key_Dead_Ogonek>,
-    Xkb2Qt<XKB_KEY_dead_iota, Qt::Key_Dead_Iota>,
-    Xkb2Qt<XKB_KEY_dead_voiced_sound, Qt::Key_Dead_Voiced_Sound>,
-    Xkb2Qt<XKB_KEY_dead_semivoiced_sound, Qt::Key_Dead_Semivoiced_Sound>,
-    Xkb2Qt<XKB_KEY_dead_belowdot, Qt::Key_Dead_Belowdot>,
-    Xkb2Qt<XKB_KEY_dead_hook, Qt::Key_Dead_Hook>,
-    Xkb2Qt<XKB_KEY_dead_horn, Qt::Key_Dead_Horn>,
-    Xkb2Qt<XKB_KEY_dead_stroke, Qt::Key_Dead_Stroke>,
-    Xkb2Qt<XKB_KEY_dead_abovecomma, Qt::Key_Dead_Abovecomma>,
-    Xkb2Qt<XKB_KEY_dead_abovereversedcomma, Qt::Key_Dead_Abovereversedcomma>,
-    Xkb2Qt<XKB_KEY_dead_doublegrave, Qt::Key_Dead_Doublegrave>,
-    Xkb2Qt<XKB_KEY_dead_belowring, Qt::Key_Dead_Belowring>,
-    Xkb2Qt<XKB_KEY_dead_belowmacron, Qt::Key_Dead_Belowmacron>,
-    Xkb2Qt<XKB_KEY_dead_belowcircumflex, Qt::Key_Dead_Belowcircumflex>,
-    Xkb2Qt<XKB_KEY_dead_belowtilde, Qt::Key_Dead_Belowtilde>,
-    Xkb2Qt<XKB_KEY_dead_belowbreve, Qt::Key_Dead_Belowbreve>,
-    Xkb2Qt<XKB_KEY_dead_belowdiaeresis, Qt::Key_Dead_Belowdiaeresis>,
-    Xkb2Qt<XKB_KEY_dead_invertedbreve, Qt::Key_Dead_Invertedbreve>,
-    Xkb2Qt<XKB_KEY_dead_belowcomma, Qt::Key_Dead_Belowcomma>,
-    Xkb2Qt<XKB_KEY_dead_currency, Qt::Key_Dead_Currency>,
-    Xkb2Qt<XKB_KEY_dead_a, Qt::Key_Dead_a>,
-    Xkb2Qt<XKB_KEY_dead_A, Qt::Key_Dead_A>,
-    Xkb2Qt<XKB_KEY_dead_e, Qt::Key_Dead_e>,
-    Xkb2Qt<XKB_KEY_dead_E, Qt::Key_Dead_E>,
-    Xkb2Qt<XKB_KEY_dead_i, Qt::Key_Dead_i>,
-    Xkb2Qt<XKB_KEY_dead_I, Qt::Key_Dead_I>,
-    Xkb2Qt<XKB_KEY_dead_o, Qt::Key_Dead_o>,
-    Xkb2Qt<XKB_KEY_dead_O, Qt::Key_Dead_O>,
-    Xkb2Qt<XKB_KEY_dead_u, Qt::Key_Dead_u>,
-    Xkb2Qt<XKB_KEY_dead_U, Qt::Key_Dead_U>,
-    Xkb2Qt<XKB_KEY_dead_small_schwa, Qt::Key_Dead_Small_Schwa>,
-    Xkb2Qt<XKB_KEY_dead_capital_schwa, Qt::Key_Dead_Capital_Schwa>,
-    Xkb2Qt<XKB_KEY_dead_greek, Qt::Key_Dead_Greek>,
-/* The following four XKB_KEY_dead keys got removed in libxkbcommon 1.6.0
-The define check is kind of version check here. */
-#ifdef XKB_KEY_dead_lowline
-    Xkb2Qt<XKB_KEY_dead_lowline, Qt::Key_Dead_Lowline>,
-    Xkb2Qt<XKB_KEY_dead_aboveverticalline, Qt::Key_Dead_Aboveverticalline>,
-    Xkb2Qt<XKB_KEY_dead_belowverticalline, Qt::Key_Dead_Belowverticalline>,
-    Xkb2Qt<XKB_KEY_dead_longsolidusoverlay, Qt::Key_Dead_Longsolidusoverlay>,
-#endif
-    Xkb2Qt<XKB_KEY_XF86Back, Qt::Key_Back>,
-    Xkb2Qt<XKB_KEY_XF86Forward, Qt::Key_Forward>,
-    Xkb2Qt<XKB_KEY_XF86Stop, Qt::Key_Stop>,
-    Xkb2Qt<XKB_KEY_XF86Refresh, Qt::Key_Refresh>,
-    Xkb2Qt<XKB_KEY_XF86Favorites, Qt::Key_Favorites>,
-    Xkb2Qt<XKB_KEY_XF86AudioMedia, Qt::Key_LaunchMedia>,
-    Xkb2Qt<XKB_KEY_XF86OpenURL, Qt::Key_OpenUrl>,
-    Xkb2Qt<XKB_KEY_XF86HomePage, Qt::Key_HomePage>,
-    Xkb2Qt<XKB_KEY_XF86Search, Qt::Key_Search>,
-    Xkb2Qt<XKB_KEY_XF86AudioLowerVolume, Qt::Key_VolumeDown>,
-    Xkb2Qt<XKB_KEY_XF86AudioMute, Qt::Key_VolumeMute>,
-    Xkb2Qt<XKB_KEY_XF86AudioRaiseVolume, Qt::Key_VolumeUp>,
-    Xkb2Qt<XKB_KEY_XF86AudioPlay, Qt::Key_MediaPlay>,
-    Xkb2Qt<XKB_KEY_XF86AudioStop, Qt::Key_MediaStop>,
-    Xkb2Qt<XKB_KEY_XF86AudioPrev, Qt::Key_MediaPrevious>,
-    Xkb2Qt<XKB_KEY_XF86AudioNext, Qt::Key_MediaNext>,
-    Xkb2Qt<XKB_KEY_XF86AudioRecord, Qt::Key_MediaRecord>,
-    Xkb2Qt<XKB_KEY_XF86AudioPause, Qt::Key_MediaPause>,
-    Xkb2Qt<XKB_KEY_XF86Mail, Qt::Key_LaunchMail>,
-    Xkb2Qt<XKB_KEY_XF86MyComputer, Qt::Key_LaunchMedia>,
-    Xkb2Qt<XKB_KEY_XF86Memo, Qt::Key_Memo>,
-    Xkb2Qt<XKB_KEY_XF86ToDoList, Qt::Key_ToDoList>,
-    Xkb2Qt<XKB_KEY_XF86Calendar, Qt::Key_Calendar>,
-    Xkb2Qt<XKB_KEY_XF86PowerDown, Qt::Key_PowerDown>,
-    Xkb2Qt<XKB_KEY_XF86ContrastAdjust, Qt::Key_ContrastAdjust>,
-    Xkb2Qt<XKB_KEY_XF86Standby, Qt::Key_Standby>,
-    Xkb2Qt<XKB_KEY_XF86MonBrightnessUp, Qt::Key_MonBrightnessUp>,
-    Xkb2Qt<XKB_KEY_XF86MonBrightnessDown, Qt::Key_MonBrightnessDown>,
-    Xkb2Qt<XKB_KEY_XF86KbdLightOnOff, Qt::Key_KeyboardLightOnOff>,
-    Xkb2Qt<XKB_KEY_XF86KbdBrightnessUp, Qt::Key_KeyboardBrightnessUp>,
-    Xkb2Qt<XKB_KEY_XF86KbdBrightnessDown, Qt::Key_KeyboardBrightnessDown>,
-    Xkb2Qt<XKB_KEY_XF86PowerOff, Qt::Key_PowerOff>,
-    Xkb2Qt<XKB_KEY_XF86WakeUp, Qt::Key_WakeUp>,
-    Xkb2Qt<XKB_KEY_XF86Eject, Qt::Key_Eject>,
-    Xkb2Qt<XKB_KEY_XF86ScreenSaver, Qt::Key_ScreenSaver>,
-    Xkb2Qt<XKB_KEY_XF86WWW, Qt::Key_WWW>,
-    Xkb2Qt<XKB_KEY_XF86Sleep, Qt::Key_Sleep>,
-    Xkb2Qt<XKB_KEY_XF86LightBulb, Qt::Key_LightBulb>,
-    Xkb2Qt<XKB_KEY_XF86Shop, Qt::Key_Shop>,
-    Xkb2Qt<XKB_KEY_XF86History, Qt::Key_History>,
-    Xkb2Qt<XKB_KEY_XF86AddFavorite, Qt::Key_AddFavorite>,
-    Xkb2Qt<XKB_KEY_XF86HotLinks, Qt::Key_HotLinks>,
-    Xkb2Qt<XKB_KEY_XF86BrightnessAdjust, Qt::Key_BrightnessAdjust>,
-    Xkb2Qt<XKB_KEY_XF86Finance, Qt::Key_Finance>,
-    Xkb2Qt<XKB_KEY_XF86Community, Qt::Key_Community>,
-    Xkb2Qt<XKB_KEY_XF86AudioRewind, Qt::Key_AudioRewind>,
-    Xkb2Qt<XKB_KEY_XF86BackForward, Qt::Key_BackForward>,
-    Xkb2Qt<XKB_KEY_XF86ApplicationLeft, Qt::Key_ApplicationLeft>,
-    Xkb2Qt<XKB_KEY_XF86ApplicationRight, Qt::Key_ApplicationRight>,
-    Xkb2Qt<XKB_KEY_XF86Book, Qt::Key_Book>, Xkb2Qt<XKB_KEY_XF86CD, Qt::Key_CD>,
-    Xkb2Qt<XKB_KEY_XF86Calculater, Qt::Key_Calculator>,
-    Xkb2Qt<XKB_KEY_XF86Calculator, Qt::Key_Calculator>,
-    Xkb2Qt<XKB_KEY_XF86Clear, Qt::Key_Clear>,
-    Xkb2Qt<XKB_KEY_XF86ClearGrab, Qt::Key_ClearGrab>,
-    Xkb2Qt<XKB_KEY_XF86Close, Qt::Key_Close>,
-    Xkb2Qt<XKB_KEY_XF86Copy, Qt::Key_Copy>,
-    Xkb2Qt<XKB_KEY_XF86Cut, Qt::Key_Cut>,
-    Xkb2Qt<XKB_KEY_XF86Display, Qt::Key_Display>,
-    Xkb2Qt<XKB_KEY_XF86DOS, Qt::Key_DOS>,
-    Xkb2Qt<XKB_KEY_XF86Documents, Qt::Key_Documents>,
-    Xkb2Qt<XKB_KEY_XF86Excel, Qt::Key_Excel>,
-    Xkb2Qt<XKB_KEY_XF86Explorer, Qt::Key_Explorer>,
-    Xkb2Qt<XKB_KEY_XF86Game, Qt::Key_Game>, Xkb2Qt<XKB_KEY_XF86Go, Qt::Key_Go>,
-    Xkb2Qt<XKB_KEY_XF86iTouch, Qt::Key_iTouch>,
-    Xkb2Qt<XKB_KEY_XF86LogOff, Qt::Key_LogOff>,
-    Xkb2Qt<XKB_KEY_XF86Market, Qt::Key_Market>,
-    Xkb2Qt<XKB_KEY_XF86Meeting, Qt::Key_Meeting>,
-    Xkb2Qt<XKB_KEY_XF86MenuKB, Qt::Key_MenuKB>,
-    Xkb2Qt<XKB_KEY_XF86MenuPB, Qt::Key_MenuPB>,
-    Xkb2Qt<XKB_KEY_XF86MySites, Qt::Key_MySites>,
-    Xkb2Qt<XKB_KEY_XF86New, Qt::Key_New>,
-    Xkb2Qt<XKB_KEY_XF86News, Qt::Key_News>,
-    Xkb2Qt<XKB_KEY_XF86OfficeHome, Qt::Key_OfficeHome>,
-    Xkb2Qt<XKB_KEY_XF86Open, Qt::Key_Open>,
-    Xkb2Qt<XKB_KEY_XF86Option, Qt::Key_Option>,
-    Xkb2Qt<XKB_KEY_XF86Paste, Qt::Key_Paste>,
-    Xkb2Qt<XKB_KEY_XF86Phone, Qt::Key_Phone>,
-#ifdef XKB_KEY_XF86PickupPhone
-    Xkb2Qt<XKB_KEY_XF86PickupPhone, Qt::Key_Call>,
-#endif
-#ifdef XKB_KEY_XF86HangupPhone
-    Xkb2Qt<XKB_KEY_XF86HangupPhone, Qt::Key_Hangup>,
-#endif
-    Xkb2Qt<XKB_KEY_XF86Reply, Qt::Key_Reply>,
-    Xkb2Qt<XKB_KEY_XF86Reload, Qt::Key_Reload>,
-    Xkb2Qt<XKB_KEY_XF86RotateWindows, Qt::Key_RotateWindows>,
-    Xkb2Qt<XKB_KEY_XF86RotationPB, Qt::Key_RotationPB>,
-    Xkb2Qt<XKB_KEY_XF86RotationKB, Qt::Key_RotationKB>,
-    Xkb2Qt<XKB_KEY_XF86Save, Qt::Key_Save>,
-    Xkb2Qt<XKB_KEY_XF86Send, Qt::Key_Send>,
-    Xkb2Qt<XKB_KEY_XF86Spell, Qt::Key_Spell>,
-    Xkb2Qt<XKB_KEY_XF86SplitScreen, Qt::Key_SplitScreen>,
-    Xkb2Qt<XKB_KEY_XF86Support, Qt::Key_Support>,
-    Xkb2Qt<XKB_KEY_XF86TaskPane, Qt::Key_TaskPane>,
-    Xkb2Qt<XKB_KEY_XF86Terminal, Qt::Key_Terminal>,
-    Xkb2Qt<XKB_KEY_XF86Tools, Qt::Key_Tools>,
-    Xkb2Qt<XKB_KEY_XF86Travel, Qt::Key_Travel>,
-    Xkb2Qt<XKB_KEY_XF86Video, Qt::Key_Video>,
-    Xkb2Qt<XKB_KEY_XF86Word, Qt::Key_Word>,
-    Xkb2Qt<XKB_KEY_XF86Xfer, Qt::Key_Xfer>,
-    Xkb2Qt<XKB_KEY_XF86ZoomIn, Qt::Key_ZoomIn>,
-    Xkb2Qt<XKB_KEY_XF86ZoomOut, Qt::Key_ZoomOut>,
-    Xkb2Qt<XKB_KEY_XF86Away, Qt::Key_Away>,
-    Xkb2Qt<XKB_KEY_XF86Messenger, Qt::Key_Messenger>,
-    Xkb2Qt<XKB_KEY_XF86WebCam, Qt::Key_WebCam>,
-    Xkb2Qt<XKB_KEY_XF86MailForward, Qt::Key_MailForward>,
-    Xkb2Qt<XKB_KEY_XF86Pictures, Qt::Key_Pictures>,
-    Xkb2Qt<XKB_KEY_XF86Music, Qt::Key_Music>,
-    Xkb2Qt<XKB_KEY_XF86Battery, Qt::Key_Battery>,
-    Xkb2Qt<XKB_KEY_XF86Bluetooth, Qt::Key_Bluetooth>,
-    Xkb2Qt<XKB_KEY_XF86WLAN, Qt::Key_WLAN>,
-    Xkb2Qt<XKB_KEY_XF86UWB, Qt::Key_UWB>,
-    Xkb2Qt<XKB_KEY_XF86AudioForward, Qt::Key_AudioForward>,
-    Xkb2Qt<XKB_KEY_XF86AudioRepeat, Qt::Key_AudioRepeat>,
-    Xkb2Qt<XKB_KEY_XF86AudioRandomPlay, Qt::Key_AudioRandomPlay>,
-    Xkb2Qt<XKB_KEY_XF86Subtitle, Qt::Key_Subtitle>,
-    Xkb2Qt<XKB_KEY_XF86AudioCycleTrack, Qt::Key_AudioCycleTrack>,
-    Xkb2Qt<XKB_KEY_XF86Time, Qt::Key_Time>,
-    Xkb2Qt<XKB_KEY_XF86Select, Qt::Key_Select>,
-    Xkb2Qt<XKB_KEY_XF86View, Qt::Key_View>,
-    Xkb2Qt<XKB_KEY_XF86TopMenu, Qt::Key_TopMenu>,
-    Xkb2Qt<XKB_KEY_XF86Red, Qt::Key_Red>,
-    Xkb2Qt<XKB_KEY_XF86Green, Qt::Key_Green>,
-    Xkb2Qt<XKB_KEY_XF86Yellow, Qt::Key_Yellow>,
-    Xkb2Qt<XKB_KEY_XF86Blue, Qt::Key_Blue>,
-    Xkb2Qt<XKB_KEY_XF86Bluetooth, Qt::Key_Bluetooth>,
-    Xkb2Qt<XKB_KEY_XF86Suspend, Qt::Key_Suspend>,
-    Xkb2Qt<XKB_KEY_XF86Hibernate, Qt::Key_Hibernate>,
-    Xkb2Qt<XKB_KEY_XF86TouchpadToggle, Qt::Key_TouchpadToggle>,
-    Xkb2Qt<XKB_KEY_XF86TouchpadOn, Qt::Key_TouchpadOn>,
-    Xkb2Qt<XKB_KEY_XF86TouchpadOff, Qt::Key_TouchpadOff>,
-    Xkb2Qt<XKB_KEY_XF86AudioMicMute, Qt::Key_MicMute>,
-    Xkb2Qt<XKB_KEY_XF86Keyboard, Qt::Key_Keyboard>,
-    Xkb2Qt<XKB_KEY_XF86Launch0, Qt::Key_Launch0>,
-    Xkb2Qt<XKB_KEY_XF86Launch1, Qt::Key_Launch1>,
-    Xkb2Qt<XKB_KEY_XF86Launch2, Qt::Key_Launch2>,
-    Xkb2Qt<XKB_KEY_XF86Launch3, Qt::Key_Launch3>,
-    Xkb2Qt<XKB_KEY_XF86Launch4, Qt::Key_Launch4>,
-    Xkb2Qt<XKB_KEY_XF86Launch5, Qt::Key_Launch5>,
-    Xkb2Qt<XKB_KEY_XF86Launch6, Qt::Key_Launch6>,
-    Xkb2Qt<XKB_KEY_XF86Launch7, Qt::Key_Launch7>,
-    Xkb2Qt<XKB_KEY_XF86Launch8, Qt::Key_Launch8>,
-    Xkb2Qt<XKB_KEY_XF86Launch9, Qt::Key_Launch9>,
-    Xkb2Qt<XKB_KEY_XF86LaunchA, Qt::Key_LaunchA>,
-    Xkb2Qt<XKB_KEY_XF86LaunchB, Qt::Key_LaunchB>,
-    Xkb2Qt<XKB_KEY_XF86LaunchC, Qt::Key_LaunchC>,
-    Xkb2Qt<XKB_KEY_XF86LaunchD, Qt::Key_LaunchD>,
-    Xkb2Qt<XKB_KEY_XF86LaunchE, Qt::Key_LaunchE>,
-    Xkb2Qt<XKB_KEY_XF86LaunchF, Qt::Key_LaunchF>>::data;
+}
 
 static void qt_UCSConvertCase(uint32_t code, xkb_keysym_t *lower,
                               xkb_keysym_t *upper) {
@@ -613,10 +772,9 @@ Qt::Key keysym_to_QTKey(xkb_keysym_t keysym) {
       return qtKey;
     }
   } else {
-    const XKBQTPair pair{keysym, static_cast<Qt::Key>(0)};
-    auto it = std::lower_bound(KeyTbl.cbegin(), KeyTbl.cend(), pair);
-    if (it != KeyTbl.end() && !(pair < *it)) {
-      return it->qt;
+    Qt::Key key = keysym_map(keysym);
+    if (key != Qt::Key_unknown) {
+      return key;
     }
   }
 
