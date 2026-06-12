@@ -12,7 +12,7 @@ Item {
 
     required property Flickable gifFlickable
     required property url imagePreviewUri
-    required property url imageHoverUri
+    required property string imageHoverUri
     required property url imageOutputUri
     required property string blurPreview
     required property int imageHeight
@@ -24,16 +24,6 @@ Item {
     property bool hovered: false
     property bool selected: false
     property bool hasHoverImage: imageHoverUri !== ""
-
-    // Timer so that hoverimages don't all load when flicking through the browser
-    Timer {
-        id: hoverTimer
-        interval: 300
-        repeat: false
-        onTriggered: {
-            hoverLoader.item.previouslyHovered = true;
-        }
-    }
 
     Rectangle {
         id: previewImageContainer
@@ -75,11 +65,20 @@ Item {
                 anchors.fill: parent
                 fillMode: Image.PreserveAspectFit
 
-                playing: previewImageRoot.hovered
+                playing: previewImageRoot.hovered || previewImageRoot.selected
 
                 property bool previouslyHovered: false
-                visible: previewImageRoot.hovered
+                visible: previewImageRoot.hovered || previewImageRoot.selected
                 source: previouslyHovered ? previewImageRoot.imageHoverUri : ""
+
+                // Timer so that hoverimages don't all load when flicking through the browser
+                property Timer hoverTimer: Timer {
+                    interval: 300
+                    repeat: false
+                    onTriggered: {
+                        hoverImage.previouslyHovered = true;
+                    }
+                }
 
                 Rectangle {
                     id: loadingBar
@@ -141,16 +140,20 @@ Item {
     MouseArea {
         anchors.fill: parent
         acceptedButtons: Qt.LeftButton | Qt.RightButton
-        hoverEnabled: previewImageRoot.hasHoverImage
+        hoverEnabled: true
         propagateComposedEvents: true
         onEntered: {
             previewImageRoot.hovered = true;
-            hoverLoader.item.currentFrame = previewImage.currentFrame;
-            hoverTimer.start();
+            if (previewImageRoot.hasHoverImage) {
+                hoverLoader.item.currentFrame = previewImage.currentFrame;
+                hoverLoader.item.hoverTimer.start();
+            }
         }
         onExited: {
             previewImageRoot.hovered = false;
-            hoverTimer.stop();
+            if (previewImageRoot.hasHoverImage) {
+                hoverLoader.item.hoverTimer.stop();
+            }
         }
 
         function toggleSelect() {

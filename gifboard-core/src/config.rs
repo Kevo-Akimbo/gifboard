@@ -23,7 +23,7 @@ pub enum Filetype {
 #[serde(default)]
 pub struct Config {
     pub klippy_api_key: Option<String>,
-    pub attachment_paths: Vec<PathBuf>,
+    pub local_file_paths: Vec<PathBuf>,
     pub saved_file_output: Option<PathBuf>,
     pub default_output_quality: ImageQuality,
     pub hover_quality: ImageQuality,
@@ -38,7 +38,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             klippy_api_key: None,
-            attachment_paths: vec![],
+            local_file_paths: vec![],
             saved_file_output: None,
             default_output_quality: ImageQuality::High,
             hover_quality: ImageQuality::High,

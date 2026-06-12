@@ -4,7 +4,10 @@ use std::io;
 
 use crate::{
     config,
-    query::fetch::{Attachment, AttachmentType},
+    query::{
+        Attachment,
+        fetch::{KlippySource, LinkType},
+    },
 };
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -63,38 +66,38 @@ fn attachment_from_result(
 ) -> io::Result<Attachment> {
     let preview_uri = match config.preview_quality {
         config::ImageQuality::High if config.play_preview => {
-            AttachmentType::Url(res.file.hd.webp.url.clone())
+            LinkType::Url(res.file.hd.webp.url.clone())
         }
-        config::ImageQuality::High => AttachmentType::Url(res.file.hd.jpg.url.clone()),
+        config::ImageQuality::High => LinkType::Url(res.file.hd.jpg.url.clone()),
 
         config::ImageQuality::Medium if config.play_preview => {
-            AttachmentType::Url(res.file.sm.webp.url.clone())
+            LinkType::Url(res.file.sm.webp.url.clone())
         }
-        config::ImageQuality::Medium => AttachmentType::Url(res.file.sm.jpg.url.clone()),
+        config::ImageQuality::Medium => LinkType::Url(res.file.sm.jpg.url.clone()),
 
         config::ImageQuality::Low if config.play_preview => {
-            AttachmentType::Url(res.file.xs.webp.url.clone())
+            LinkType::Url(res.file.xs.webp.url.clone())
         }
-        config::ImageQuality::Low => AttachmentType::RawJpg,
+        config::ImageQuality::Low => LinkType::RawJpg,
     };
     let hover_uri = if config.disable_hover {
         None
     } else {
         Some(match config.hover_quality {
             config::ImageQuality::High if config.play_hover => {
-                AttachmentType::Url(res.file.hd.webp.url.clone())
+                LinkType::Url(res.file.hd.webp.url.clone())
             }
-            config::ImageQuality::High => AttachmentType::Url(res.file.hd.jpg.url.clone()),
+            config::ImageQuality::High => LinkType::Url(res.file.hd.jpg.url.clone()),
 
             config::ImageQuality::Medium if config.play_hover => {
-                AttachmentType::Url(res.file.md.webp.url.clone())
+                LinkType::Url(res.file.md.webp.url.clone())
             }
-            config::ImageQuality::Medium => AttachmentType::Url(res.file.md.jpg.url.clone()),
+            config::ImageQuality::Medium => LinkType::Url(res.file.md.jpg.url.clone()),
 
             config::ImageQuality::Low if config.play_hover => {
-                AttachmentType::Url(res.file.sm.webp.url.clone())
+                LinkType::Url(res.file.sm.webp.url.clone())
             }
-            config::ImageQuality::Low => AttachmentType::Url(res.file.sm.jpg.url.clone()),
+            config::ImageQuality::Low => LinkType::Url(res.file.sm.jpg.url.clone()),
         })
     };
 
@@ -106,14 +109,14 @@ fn attachment_from_result(
         config::Filetype::Webm => res.file.hd.webm,
     };
 
-    Ok(Attachment {
-        output_uri: AttachmentType::Url(output.url),
+    Ok(Attachment::Klippy(KlippySource::new(
+        LinkType::Url(output.url),
         hover_uri,
         preview_uri,
-        blur_preview: res.blur_preview,
-        height: output.height,
-        width: output.width,
-    })
+        res.blur_preview,
+        output.height,
+        output.width,
+    )))
 }
 
 pub(crate) async fn fetch_from_klippy(

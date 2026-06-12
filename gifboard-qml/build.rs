@@ -10,7 +10,10 @@ fn main() {
         .unwrap();
 
     println!("cargo::rerun-if-env-changed=PKG_CONFIG_PATH");
-    pkg_config::Config::new().atleast_version("6.10").probe("Qt6Core").unwrap();
+    pkg_config::Config::new()
+        .atleast_version("6.10")
+        .probe("Qt6Core")
+        .unwrap();
 
     unsafe {
         #[cfg(not(debug_assertions))]
@@ -43,6 +46,7 @@ fn main() {
             .cpp_file("src/keysym_to_QTKey.cpp")
             .cpp_file("src/keysym_to_QTKey.h")
             .cpp_file("src/clipboard.h")
+            .cpp_file("src/image_size.h")
             .cc_builder(|cc| {
                 cc.flag_if_supported("-std=c++20");
             })

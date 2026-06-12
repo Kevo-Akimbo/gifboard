@@ -156,7 +156,7 @@ ApplicationWindow {
             columnHeights = temp;
         }
 
-        onReceivedResult: (output_uri, hover_uri, preview_uri, blur_preview, width, height) => {
+        function recalculateHeights(height): int {
             if (gifBrowser.columnModels.length === 0) {
                 return;
             }
@@ -176,18 +176,40 @@ ApplicationWindow {
                     shortestColumn = i;
                 }
             }
+            columnHeights[shortestColumn] += height;
+            currentIndex++;
 
+            return shortestColumn;
+        }
+
+        onReceivedKlippy: (output_uri, hover_uri, preview_uri, blur_preview, width, height) => {
+            let shortestColumn = recalculateHeights(height);
             gifBrowser.columnModels[shortestColumn].append({
                 imageOutputUri: new URL(output_uri),
-                imageHoverUri: new URL(hover_uri),
+                imageHoverUri: hover_uri,
                 imagePreviewUri: new URL(preview_uri),
                 blurPreview: blur_preview,
                 imageHeight: height,
                 imageWidth: width,
                 index: currentIndex
             });
-            columnHeights[shortestColumn] += height;
-            currentIndex++;
+        }
+
+        onReceivedLocalFile: path => {
+            console.log("File: ", path);
+        }
+        onReceivedLocalImage: (path, imageSize) => {
+          let shortestColumn = recalculateHeights(height);
+          let localUri = new URL("file://" + path);
+            gifBrowser.columnModels[shortestColumn].append({
+                imageOutputUri: localUri,
+                imageHoverUri: "",
+                imagePreviewUri: localUri,
+                blurPreview: "",
+                imageHeight: imageSize.height,
+                imageWidth: imageSize.width,
+                index: currentIndex
+            });
         }
 
         property var clearResults: () => {
