@@ -153,9 +153,17 @@ pub(crate) fn fetch_local(
             );
         }
     }
-    let mut out = vec![];
-    for path in heap.into_iter().skip(page * count).take(count) {
-        out.push(Attachment::LocalFile(path.item));
-    }
-    Ok(out)
+    let char_count = query_string.chars().filter(|x| !x.is_whitespace()).count() as i32;
+    Ok(heap
+        .into_iter()
+        .filter_map(|path| {
+            if path.score / char_count >= 3 {
+                Some(Attachment::LocalFile(path.item))
+            } else {
+                None
+            }
+        })
+        .skip(page * count)
+        .take(count)
+        .collect())
 }
