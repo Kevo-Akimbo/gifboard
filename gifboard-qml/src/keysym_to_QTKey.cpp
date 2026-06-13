@@ -323,14 +323,14 @@ static inline Qt::Key keysym_map(xkb_keysym_t keysym) {
     return Qt::Key_Dead_Capital_Schwa;
   case XKB_KEY_dead_greek:
     return Qt::Key_Dead_Greek;
-  case XKB_KEY_dead_lowline:
-    return Qt::Key_Dead_Lowline;
-  case XKB_KEY_dead_aboveverticalline:
-    return Qt::Key_Dead_Aboveverticalline;
-  case XKB_KEY_dead_belowverticalline:
-    return Qt::Key_Dead_Belowverticalline;
-  case XKB_KEY_dead_longsolidusoverlay:
-    return Qt::Key_Dead_Longsolidusoverlay;
+  // case XKB_KEY_dead_lowline:
+  //   return Qt::Key_Dead_Lowline;
+  // case XKB_KEY_dead_aboveverticalline:
+  //   return Qt::Key_Dead_Aboveverticalline;
+  // case XKB_KEY_dead_belowverticalline:
+  //   return Qt::Key_Dead_Belowverticalline;
+  // case XKB_KEY_dead_longsolidusoverlay:
+  //   return Qt::Key_Dead_Longsolidusoverlay;
   case XKB_KEY_XF86Back:
     return Qt::Key_Back;
   case XKB_KEY_XF86Forward:
