@@ -2,13 +2,7 @@ use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::io;
 
-use crate::{
-    config,
-    query::{
-        Attachment,
-        fetch::{KlippySource, LinkType},
-    },
-};
+use crate::{config, query::fetch::LinkType};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub(crate) struct KlippyResponseFileInfo {
@@ -63,7 +57,7 @@ pub(crate) struct KlippyResponse {
 fn attachment_from_result(
     res: KlippyResponseResult,
     config: &config::Config,
-) -> io::Result<Attachment> {
+) -> io::Result<KlippySource> {
     let preview_uri = match config.preview_quality {
         config::ImageQuality::High if config.play_preview => {
             LinkType::Url(res.file.hd.webp.url.clone())
@@ -109,21 +103,51 @@ fn attachment_from_result(
         config::Filetype::Webm => res.file.hd.webm,
     };
 
-    Ok(Attachment::Klippy(KlippySource::new(
+    Ok(KlippySource::new(
         LinkType::Url(output.url),
         hover_uri,
         preview_uri,
         res.blur_preview,
         output.height,
         output.width,
-    )))
+    ))
+}
+
+#[derive(Debug)]
+pub struct KlippySource {
+    pub output_uri: LinkType,
+    pub hover_uri: Option<LinkType>,
+    pub preview_uri: LinkType,
+    pub blur_preview: String,
+    pub height: usize,
+    pub width: usize,
+}
+
+impl KlippySource {
+    pub fn new(
+        output_uri: LinkType,
+        hover_uri: Option<LinkType>,
+        preview_uri: LinkType,
+        blur_preview: String,
+        height: usize,
+        width: usize,
+    ) -> Self {
+        Self {
+            output_uri,
+            hover_uri,
+            preview_uri,
+            blur_preview,
+            height,
+            width,
+        }
+    }
 }
 
 pub(crate) async fn fetch_from_klippy(
     config: &config::Config,
     page: usize,
     query: &str,
-) -> std::io::Result<Vec<Attachment>> {
+) -> std::io::Result<Vec<KlippySource>> {
     if let Some(api_key) = config.klippy_api_key.as_ref() {
         let params = [
             ("q", query),
@@ -158,6 +182,6 @@ pub(crate) async fn fetch_from_klippy(
             .map(|res| attachment_from_result(res, config))
             .collect::<io::Result<_>>()?)
     } else {
-        Ok(vec![])
+        Err(std::io::Error::other("Klippy API key not set"))
     }
 }

@@ -195,21 +195,39 @@ ApplicationWindow {
             });
         }
 
+        property int page_start_index: 0
+        onCurrent_pageChanged: {
+            page_start_index = currentIndex;
+            console.log(page_start_index);
+        }
+
         onReceivedLocalFile: path => {
-            console.log("File: ", path);
+        // console.log("File: ", path);
         }
         onReceivedLocalImage: (path, imageSize) => {
-          let shortestColumn = recalculateHeights(height);
-          let localUri = new URL("file://" + path);
-            gifBrowser.columnModels[shortestColumn].append({
-                imageOutputUri: localUri,
-                imageHoverUri: "",
-                imagePreviewUri: localUri,
-                blurPreview: "",
-                imageHeight: imageSize.height,
-                imageWidth: imageSize.width,
-                index: currentIndex
-            });
+            let shortestColumn = recalculateHeights(imageSize.height);
+            let localUri = new URL("file://" + path);
+            if (current_page === 1) {
+                gifBrowser.columnModels[shortestColumn].insert(page_start_index, {
+                    imageOutputUri: localUri,
+                    imageHoverUri: "",
+                    imagePreviewUri: localUri,
+                    blurPreview: "",
+                    imageHeight: imageSize.height,
+                    imageWidth: imageSize.width,
+                    index: currentIndex
+                });
+            } else {
+                gifBrowser.columnModels[shortestColumn].append({
+                    imageOutputUri: localUri,
+                    imageHoverUri: "",
+                    imagePreviewUri: localUri,
+                    blurPreview: "",
+                    imageHeight: imageSize.height,
+                    imageWidth: imageSize.width,
+                    index: currentIndex
+                });
+            }
         }
 
         property var clearResults: () => {

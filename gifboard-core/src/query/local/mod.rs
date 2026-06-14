@@ -10,7 +10,7 @@ use cxx_qt_lib::QString;
 
 mod fuzzy_find;
 
-use crate::{config, query::Attachment};
+use crate::config;
 
 struct DirWalker {
     dir_stack: Vec<ReadDir>,
@@ -122,7 +122,7 @@ pub(crate) fn fetch_local(
     query: &QString,
     count: usize,
     page: usize,
-) -> std::io::Result<Vec<Attachment>> {
+) -> std::io::Result<Vec<PathBuf>> {
     let query_string = query.to_string();
     let query_tokens = query_string.split_whitespace().collect::<Vec<_>>();
     let mut heap: BinaryHeap<FuzzyScore<PathBuf>> = BinaryHeap::new();
@@ -130,6 +130,13 @@ pub(crate) fn fetch_local(
     let mut hgaps = vec![0; 100];
     let mut vgaps = vec![0; 100];
     for path in config::read_config()?.local_file_paths {
+        if !path.exists() {
+            eprintln!(
+                "Local file path does not exist: '{}', ignoring",
+                path.display()
+            );
+            continue;
+        }
         if path.is_file() {
             fuzzy_match(
                 &mut heap,
@@ -158,7 +165,7 @@ pub(crate) fn fetch_local(
         .into_iter()
         .filter_map(|path| {
             if path.score / char_count >= 3 {
-                Some(Attachment::LocalFile(path.item))
+                Some(path.item)
             } else {
                 None
             }
