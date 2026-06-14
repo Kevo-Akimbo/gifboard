@@ -16,6 +16,7 @@
 
   outputs =
     {
+      self,
       nixpkgs,
       crane,
       flake-utils,
@@ -104,15 +105,20 @@
 
             meta = {
               mainProgram = "gifboard";
+              license = pkgs.lib.licenses.gpl3;
+              homepage = "https://github.com/Kaisia-Estrel/gifboard";
             };
           }
         );
       in
       {
-        packages.default = gifboard;
-        apps.default = flake-utils.lib.mkApp {
+        packages.gifboard = gifboard;
+        packages.default = self.packages.${system}.gifboard;
+
+        apps.gifboard = flake-utils.lib.mkApp {
           drv = gifboard;
         };
+        apps.default = self.apps.${system}.gifboard;
 
         devShells.default = craneLib.devShell {
 

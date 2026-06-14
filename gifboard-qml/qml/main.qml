@@ -76,6 +76,7 @@ ApplicationWindow {
 
         TextField {
             id: searchInput
+            placeholderText: "Search KLIPPY"
             Layout.fillWidth: true
             focus: true
 
