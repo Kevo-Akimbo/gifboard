@@ -22,15 +22,21 @@ jobs:
       id: get_version
       run: |
         CRATE_VERSION="$(grep -m 1 -i "^version" Cargo.toml | cut -d '"' -f 2)" 
-        CRATE_VERSION="0.0.0"
+        CRATE_VERSION="0.1.0"
         echo "VERSION=$CRATE_VERSION" >> $GITHUB_ENV
         echo "version=$CRATE_VERSION" >> $GITHUB_OUTPUT
+        CHANGELOG="$(sed -n "/^## \\[${CRATE_VERSION//./\\.}\\]/,/^## \\[/p" CHANGELOG.md | sed '${/^## \[/d;}')"
+        echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+        echo "$CHANGELOG" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
 
     - name: Check if version actually changed
       id: check_version
       run: |
         # Get the version from the previous commit
         PREV_VERSION=$(git show HEAD~1:Cargo.toml | grep -m 1 '^version = ' | cut -d '"' -f 2 || echo "")
+        echo "${{ env.CHANGELOG }}"
+        echo "$CHANGELOG"
         
         if [ "$VERSION" = "$PREV_VERSION" ]; then
           echo "Version has not changed ($VERSION). Skipping release."
@@ -39,3 +45,11 @@ jobs:
           echo "Version bumped from '$PREV_VERSION' to '$VERSION'."
           echo "changed=true" >> $GITHUB_OUTPUT
         fi
+
+    - name: Build AppImage
+      if: steps.check_version.outputs.changed == 'true'
+      run: |
+        echo "${{ env.CHANGELOG }}"
+        echo "$CHANGELOG"
+        # chmod +x ./package-appimage.sh
+        # ./package-appimage.sh
