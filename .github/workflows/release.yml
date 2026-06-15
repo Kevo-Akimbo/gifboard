@@ -26,17 +26,22 @@ jobs:
         echo "VERSION=$CRATE_VERSION" >> $GITHUB_ENV
         echo "version=$CRATE_VERSION" >> $GITHUB_OUTPUT
         CHANGELOG="$(sed -n "/^## \\[${CRATE_VERSION//./\\.}\\]/,/^## \\[/p" CHANGELOG.md | sed '${/^## \[/d;}')"
-        echo "CHANGELOG<<EOF" >> $GITHUB_ENV
-        echo "$CHANGELOG" >> $GITHUB_ENV
-        echo "EOF" >> $GITHUB_ENV
+        echo "changelog<<EOF" >> $GITHUB_OUTPUT
+        echo "$CHANGELOG" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
 
     - name: Check if version actually changed
       id: check_version
       run: |
+        echo "v${{ steps.get_version.outputs.version }}"
+        echo "${{ steps.get_version.outputs.changelog }}"
         # Get the version from the previous commit
         PREV_VERSION=$(git show HEAD~1:Cargo.toml | grep -m 1 '^version = ' | cut -d '"' -f 2 || echo "")
-        echo "${{ env.CHANGELOG }}"
-        echo "$CHANGELOG"
+
+        if [ -z "$CHANGELOG" ]; then
+          echo "Changelog is empty ($VERSION). Skipping release."
+          echo "changed=false" >> $GITHUB_OUTPUT
+        fi
         
         if [ "$VERSION" = "$PREV_VERSION" ]; then
           echo "Version has not changed ($VERSION). Skipping release."
@@ -49,7 +54,19 @@ jobs:
     - name: Build AppImage
       if: steps.check_version.outputs.changed == 'true'
       run: |
-        echo "${{ env.CHANGELOG }}"
-        echo "$CHANGELOG"
-        # chmod +x ./package-appimage.sh
-        # ./package-appimage.sh
+        chmod +x ./package-appimage.sh
+        ./package-appimage.sh
+
+    - name: Create Github Release
+      if: steps.check_version.outputs.changed == 'true'
+      uses: softprops/action-gh-release@v3
+      with: 
+        tag_name: v${{ steps.get_version.outputs.version }}
+        body: ${{ steps.get_version.outputs.changelog }}
+        prerelease: false
+        make_latest: true
+        files: |
+          ./appimage-out/gifboard-x86_64.AppImage
+
+        
+
