@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.1](https://github.com/Kasia-Estrel/gifboard/releases/tag/v0.1.1) - 2026-06-16
 Test Release
-## Added
+
+###  Added
 - Github workflow
 - other stuff
 
