@@ -76,7 +76,7 @@ ApplicationWindow {
 
         TextField {
             id: searchInput
-            placeholderText: "Search KLIPPY"
+            placeholderText: "Search KLIPY"
             Layout.fillWidth: true
             focus: true
 
@@ -136,6 +136,68 @@ ApplicationWindow {
         // gifboard stays open in the background until a new selection is made
         onReleasedOwnership: {
             Qt.quit();
+        }
+    }
+
+    Dialog {
+        id: versionDialog
+        anchors.centerIn: parent
+        y: 80
+        property string message
+        property string version
+
+        padding: 20
+
+        ColumnLayout {
+            anchors.centerIn: parent
+            spacing: 10
+            Text {
+                text: versionDialog.message
+                textFormat: Text.MarkdownText
+                horizontalAlignment: Text.AlignHCenter
+            }
+
+            Button {
+                text: "View Release"
+                Layout.fillWidth: true
+                padding: 10
+                onClicked: {
+                    Qt.openUrlExternally("https://github.com/Kaisia-Estrel/gifboard/releases/tag/v" + versionDialog.version);
+                    versionDialog.accept();
+                    Qt.quit();
+                }
+            }
+            Button {
+                text: "Remind Me Later"
+                Layout.fillWidth: true
+                padding: 10
+                onClicked: {
+                    versionDialog.reject();
+                }
+            }
+            Button {
+                text: "Skip This Version"
+                Layout.fillWidth: true
+                onClicked: {
+                    root.config.ignoreVersion(versionDialog.version);
+                    versionDialog.reject();
+                }
+            }
+        }
+    }
+    property Config config: Config {
+        Component.onCompleted: {
+            checkLatestVersion();
+        }
+        onOutdatedVersion: latest_version => {
+            versionDialog.version = latest_version;
+            versionDialog.message = `
+## A new version is available
+### ${latest_version}
+current version is ${getLocalVersion()}
+            `;
+            console.log("dialog");
+            versionDialog.open();
         }
     }
 

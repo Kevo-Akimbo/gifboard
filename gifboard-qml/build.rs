@@ -40,6 +40,7 @@ fn main() {
                 "src/x11_manager.rs",
                 "src/clipboard.rs",
                 "src/notification.rs",
+                "src/config.rs",
             ])
             .cpp_file("src/x11_filter.h")
             .cpp_file("src/x11_filter.cpp")

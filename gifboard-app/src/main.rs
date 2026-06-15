@@ -8,8 +8,6 @@ use std::pin::Pin;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     gifboard_qml::register_types();
 
-    // return Ok(());
-
     let mut app = QGuiApplication::new();
     let mut engine = QQmlApplicationEngine::new();
 

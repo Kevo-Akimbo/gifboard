@@ -1,6 +1,7 @@
 pub fn register_types() {}
 
 pub mod clipboard;
+pub mod config;
 pub mod notification;
 pub mod x11_manager;
 
