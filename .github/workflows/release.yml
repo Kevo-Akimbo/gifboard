@@ -1,0 +1,26 @@
+name: Create release on Version Bump
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+          contents: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 2
+
+    - name: Get current version from Cargo.toml
+      id: get_version
+      run: |
+        CRATE_VERSION="$(grep -m 1 -i "^version" Cargo.toml | cut -d '"' -f 2)" 
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
