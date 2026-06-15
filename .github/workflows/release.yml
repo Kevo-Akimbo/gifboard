@@ -32,18 +32,20 @@ jobs:
     - name: Check if version actually changed
       id: check_version
       run: |
+        echo "v${{ steps.get_version.outputs.version }}"
+        echo "${{ steps.get_version.outputs.changelog }}"
+        # Get the version from the previous commit
         PREV_VERSION=$(git show HEAD~1:Cargo.toml | grep -m 1 '^version = ' | cut -d '"' -f 2 || echo "")
 
-        if [ -z "$CHANGELOG" ]; then
+        if [[ -z "$CHANGELOG" ]]; then
           echo "Changelog is empty ($VERSION). Skipping release."
           echo "changed=false" >> $GITHUB_OUTPUT
-        fi
-        
-        if [ "$VERSION" = "$PREV_VERSION" ]; then
+        elif [ "$VERSION" = "$PREV_VERSION" ]; then
           echo "Version has not changed ($VERSION). Skipping release."
           echo "changed=false" >> $GITHUB_OUTPUT
         else
           echo "Version bumped from '$PREV_VERSION' to '$VERSION'."
+          echo "$CHANGELOG"
           echo "changed=true" >> $GITHUB_OUTPUT
         fi
 
@@ -63,6 +65,3 @@ jobs:
         make_latest: true
         files: |
           ./appimage-out/gifboard-x86_64.AppImage
-
-        
-
