@@ -22,8 +22,8 @@ jobs:
       id: get_version
       run: |
         CRATE_VERSION="$(grep -m 1 -i "^version" Cargo.toml | cut -d '"' -f 2)" 
-        echo "VERSION=$VERSION" >> $GITHUB_ENV
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "VERSION=$CRATE_VERSION" >> $GITHUB_ENV
+        echo "version=$CRATE_VERSION" >> $GITHUB_OUTPUT
 
     - name: Check if version actually changed
       id: check_version
