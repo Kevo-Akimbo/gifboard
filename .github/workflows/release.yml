@@ -22,7 +22,6 @@ jobs:
       id: get_version
       run: |
         CRATE_VERSION="$(grep -m 1 -i "^version" Cargo.toml | cut -d '"' -f 2)" 
-        CRATE_VERSION="0.1.0"
         echo "VERSION=$CRATE_VERSION" >> $GITHUB_ENV
         echo "version=$CRATE_VERSION" >> $GITHUB_OUTPUT
         CHANGELOG="$(sed -n "/^## \\[${CRATE_VERSION//./\\.}\\]/,/^## \\[/p" CHANGELOG.md | sed '${/^## \[/d;}')"
