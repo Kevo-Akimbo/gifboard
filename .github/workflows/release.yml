@@ -65,4 +65,4 @@ jobs:
         prerelease: false
         make_latest: true
         files: |
-          ./appimage-out/gifboard-x86_64.AppImage
+          ./appimage-out/*
