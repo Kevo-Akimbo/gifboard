@@ -28,12 +28,13 @@ jobs:
         echo "changelog<<EOF" >> $GITHUB_OUTPUT
         echo "$CHANGELOG" >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
+        echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+        echo "$CHANGELOG" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
 
     - name: Check if version actually changed
       id: check_version
       run: |
-        echo "v${{ steps.get_version.outputs.version }}"
-        echo "${{ steps.get_version.outputs.changelog }}"
         # Get the version from the previous commit
         PREV_VERSION=$(git show HEAD~1:Cargo.toml | grep -m 1 '^version = ' | cut -d '"' -f 2 || echo "")
 
